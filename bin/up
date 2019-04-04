@@ -6,6 +6,5 @@ set -e
 . ./.envrc
 
 bin/build
-bin/apply-crds
 echo "watching namespace ${NAMESPACE}"
 binaries/eirini-ext

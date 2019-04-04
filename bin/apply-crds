@@ -1,5 +1,0 @@
-#!/bin/sh
-
-set -e
-
-kubectl apply -f deploy/helm/eirini-ext/templates/erini_crd.yaml

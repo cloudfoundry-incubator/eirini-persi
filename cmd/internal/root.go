@@ -88,7 +88,6 @@ func init() {
 	viper.BindPFlag("namespace", pf.Lookup("namespace"))
 	viper.BindPFlag("operator-webhook-host", pf.Lookup("operator-webhook-host"))
 	viper.BindPFlag("operator-webhook-port", pf.Lookup("operator-webhook-port"))
-	viper.BindPFlag("docker-image-tag", rootCmd.PersistentFlags().Lookup("docker-image-tag"))
 	viper.BindEnv("kubeconfig")
 	viper.BindEnv("namespace", "NAMESPACE")
 	viper.BindEnv("operator-webhook-host", "OPERATOR_WEBHOOK_HOST")
