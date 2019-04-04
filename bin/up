@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -e
+
+. ./bin/include/versioning
+. ./.envrc
+
+bin/build
+bin/apply-crds
+echo "watching namespace ${NAMESPACE}"
+binaries/eirini-ext
