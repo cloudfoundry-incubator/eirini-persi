@@ -19,9 +19,9 @@ import (
 
 	"code.cloudfoundry.org/cf-operator/pkg/credsgen"
 	gfakes "code.cloudfoundry.org/cf-operator/pkg/credsgen/fakes"
+	"code.cloudfoundry.org/cf-operator/pkg/kube/util/config"
 	"github.com/SUSE/eirini-extensions/pkg/controllers"
 	cfakes "github.com/SUSE/eirini-extensions/pkg/controllers/fakes"
-	"github.com/SUSE/eirini-extensions/pkg/util/config"
 	"github.com/SUSE/eirini-extensions/testing"
 )
 

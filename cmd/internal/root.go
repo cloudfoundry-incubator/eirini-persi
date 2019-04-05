@@ -6,8 +6,8 @@ import (
 	"time"
 
 	kubeConfig "code.cloudfoundry.org/cf-operator/pkg/kube/config"
+	"code.cloudfoundry.org/cf-operator/pkg/kube/util/config"
 	"github.com/SUSE/eirini-extensions/pkg/operator"
-	"github.com/SUSE/eirini-extensions/pkg/util/config"
 	"github.com/SUSE/eirini-extensions/pkg/util/ctxlog"
 	"github.com/SUSE/eirini-extensions/version"
 
