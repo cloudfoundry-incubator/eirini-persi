@@ -133,8 +133,8 @@ var _ = Describe("Volume Mutator", func() {
 			f := generateGetPodFunc(&pod, nil)
 
 			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
-
 			resp := mutator.Handle(ctx, request)
+
 			Expect(len(resp.Patches)).To(Equal(2))
 		})
 
@@ -181,14 +181,43 @@ var _ = Describe("Volume Mutator", func() {
 
 			pod := labeledPod("foo", map[string]string{"source_type": "APP"}, vcapservices)
 			f := generateGetPodFunc(&pod, nil)
-
 			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
-
 			resp := mutator.Handle(ctx, request)
+
 			Expect(len(resp.Patches)).To(Equal(2))
 			Expect(len(resp.Patches[0].Value.([]interface{}))).To(Equal(3))
-
 			Expect(len(resp.Patches[1].Value.([]interface{}))).To(Equal(3))
 		})
 	})
+
+	Describe("AppendMounts", func() {
+		It("append mounts if are not existing", func() {
+			var services webhooks.VcapServices
+			pod := labeledPod("bar", map[string]string{}, ``)
+			services.ServiceMap = append(services.ServiceMap, webhooks.VcapService{VolumeMounts: []webhooks.VolumeMount{webhooks.VolumeMount{ContainerDir: "/foo/", Device: webhooks.Device{VolumeID: "foo"}}}})
+			services.AppendMounts(&pod, &pod.Spec.Containers[0])
+
+			Expect(pod.Spec.Containers[0].VolumeMounts[0].Name).To(Equal("foo"))
+			Expect(pod.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/foo/"))
+			Expect(pod.Spec.Volumes[0].Name).To(Equal("foo"))
+			Expect(pod.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName).To(Equal("foo"))
+		})
+
+		It("is idempotent and does not append already existing mounts", func() {
+			var services webhooks.VcapServices
+			pod := labeledPod("bar", map[string]string{}, ``)
+
+			services.ServiceMap = append(services.ServiceMap, webhooks.VcapService{VolumeMounts: []webhooks.VolumeMount{webhooks.VolumeMount{ContainerDir: "/foo/", Device: webhooks.Device{VolumeID: "foo"}}}})
+
+			Expect(len(pod.Spec.Containers[0].VolumeMounts)).To(Equal(0))
+			Expect(len(pod.Spec.Volumes)).To(Equal(0))
+			services.AppendMounts(&pod, &pod.Spec.Containers[0])
+			Expect(len(pod.Spec.Volumes)).To(Equal(1))
+			Expect(len(pod.Spec.Containers[0].VolumeMounts)).To(Equal(1))
+			services.AppendMounts(&pod, &pod.Spec.Containers[0])
+			Expect(len(pod.Spec.Containers[0].VolumeMounts)).To(Equal(1))
+			Expect(len(pod.Spec.Volumes)).To(Equal(1))
+		})
+	})
+
 })

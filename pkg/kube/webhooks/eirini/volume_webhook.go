@@ -17,8 +17,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
 )
 
+// GetPodFuncType represent a generic func used to retrieve the pod out of a request
 type GetPodFuncType func(types.Decoder, types.Request) (*corev1.Pod, error)
 
+// GetPodFunc retrieves a pod from a types.Request
 func GetPodFunc(decoder types.Decoder, req types.Request) (*corev1.Pod, error) {
 	pod := &corev1.Pod{}
 	err := decoder.Decode(req, pod)

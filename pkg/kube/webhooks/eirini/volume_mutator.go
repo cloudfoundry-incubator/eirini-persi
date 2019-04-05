@@ -17,10 +17,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
 )
 
+// Device is the device which the volume is refered to
 type Device struct {
-	VolumeId string `json:"volume_id"` // VolumeId represents a Persistent Volume Claim
+	VolumeID string `json:"volume_id"` // VolumeID represents a Persistent Volume Claim
 }
 
+// VolumeMount is a volume assigned to the app
 type VolumeMount struct {
 	ContainerDir string `json:"container_dir"`
 	DeviceType   string `json:"device_type"`
@@ -28,10 +30,12 @@ type VolumeMount struct {
 	Device       Device `json:"device"`
 }
 
+// VcapService contains the service configuration. We look only at volume mounts here
 type VcapService struct {
 	VolumeMounts []VolumeMount `json:"volume_mounts"`
 }
 
+// VcapServices represent the VCAP_SERVICE structure, specific to this extension
 type VcapServices struct {
 	ServiceMap []VcapService `json:"eirini-persi"`
 }
@@ -61,6 +65,49 @@ func containsContainerMount(containermounts []corev1.VolumeMount, mount string) 
 	return false
 }
 
+// AppendMounts appends volumes that are specified in VCAP_SERVICES to the pod and to the container given as arguments
+func (s VcapServices) AppendMounts(patchedPod *corev1.Pod, c *corev1.Container) {
+	for _, volumeService := range s.ServiceMap {
+		for _, volumeMount := range volumeService.VolumeMounts {
+			if !containsContainerMount(c.VolumeMounts, volumeMount.Device.VolumeID) {
+				patchedPod.Spec.Volumes = append(patchedPod.Spec.Volumes, corev1.Volume{
+					Name: volumeMount.Device.VolumeID,
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: volumeMount.Device.VolumeID,
+						},
+					},
+				})
+
+				c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
+					Name:      volumeMount.Device.VolumeID,
+					MountPath: volumeMount.ContainerDir,
+				})
+			}
+		}
+	}
+}
+
+// PatchPod alters the pod given as argument with the required volumes mounted
+func (m *VolumeMutator) PatchPod(patchedPod *corev1.Pod) (*corev1.Pod, error) {
+	for i := range patchedPod.Spec.Containers {
+		c := &patchedPod.Spec.Containers[i]
+		for _, e := range c.Env {
+			if e.Name != "VCAP_SERVICES" {
+				continue
+			}
+			var services VcapServices
+			err := json.Unmarshal([]byte(e.Value), &services)
+			if err != nil {
+				return nil, err
+			}
+			services.AppendMounts(patchedPod, c)
+			break
+		}
+	}
+	return patchedPod, nil
+}
+
 // NewVolumeMutator returns a new reconcile.Reconciler
 func NewVolumeMutator(log *zap.SugaredLogger, config *config.Config, mgr manager.Manager, srf setReferenceFunc, getPodFunc GetPodFuncType) admission.Handler {
 	mutatorLog := log.Named("eirini-volume-mutator")
@@ -82,42 +129,15 @@ func (m *VolumeMutator) Handle(ctx context.Context, req types.Request) types.Res
 	if err != nil {
 		return admission.ErrorResponse(http.StatusBadRequest, err)
 	}
-	patchedPod := pod.DeepCopy()
+	podCopy := pod.DeepCopy()
 
+	// Patch only applications pod created by Eirini
 	if v, ok := pod.GetLabels()["source_type"]; ok && v == "APP" {
-		var services VcapServices
-		for i := range patchedPod.Spec.Containers {
-			c := &patchedPod.Spec.Containers[i]
-			for _, e := range c.Env {
-				if e.Name == "VCAP_SERVICES" {
-					err := json.Unmarshal([]byte(e.Value), &services)
-					if err != nil {
-						return admission.ErrorResponse(http.StatusBadRequest, err)
-					}
-					for _, volumeService := range services.ServiceMap {
-						for _, volumeMount := range volumeService.VolumeMounts {
-							if !containsContainerMount(c.VolumeMounts, volumeMount.Device.VolumeId) {
-								patchedPod.Spec.Volumes = append(patchedPod.Spec.Volumes, corev1.Volume{
-									Name: volumeMount.Device.VolumeId,
-									VolumeSource: corev1.VolumeSource{
-										PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-											ClaimName: volumeMount.Device.VolumeId,
-										},
-									},
-								})
-
-								c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
-									Name:      volumeMount.Device.VolumeId,
-									MountPath: volumeMount.ContainerDir,
-								})
-							}
-						}
-					}
-
-					break
-				}
-			}
+		podCopy, err = m.PatchPod(podCopy)
+		if err != nil {
+			return admission.ErrorResponse(http.StatusBadRequest, err)
 		}
 	}
-	return admission.PatchResponse(pod, patchedPod)
+
+	return admission.PatchResponse(pod, podCopy)
 }
