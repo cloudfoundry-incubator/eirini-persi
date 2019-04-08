@@ -20,25 +20,27 @@ import (
 	"code.cloudfoundry.org/cf-operator/pkg/credsgen"
 	gfakes "code.cloudfoundry.org/cf-operator/pkg/credsgen/fakes"
 	"code.cloudfoundry.org/cf-operator/pkg/kube/util/config"
+	"code.cloudfoundry.org/cf-operator/testing"
 	"github.com/SUSE/eirini-extensions/pkg/controllers"
 	cfakes "github.com/SUSE/eirini-extensions/pkg/controllers/fakes"
-	"github.com/SUSE/eirini-extensions/testing"
 )
 
 var _ = Describe("Controllers", func() {
-	Describe("AddToScheme", func() {
-		It("registers our schemes with the operator", func() {
-			scheme := scheme.Scheme
-			controllers.AddToScheme(scheme)
-			kinds := []string{}
-			for k, _ := range scheme.AllKnownTypes() {
-				kinds = append(kinds, k.Kind)
-			}
-			Expect(kinds).To(ContainElement("BOSHDeployment"))
-			Expect(kinds).To(ContainElement("ExtendedSecret"))
-			Expect(kinds).To(ContainElement("ExtendedStatefulSet"))
-		})
-	})
+	// We don't have any controller right now
+
+	// Describe("AddToScheme", func() {
+	// 	It("registers our schemes with the operator", func() {
+	// 		scheme := scheme.Scheme
+	// 		controllers.AddToScheme(scheme)
+	// 		kinds := []string{}
+	// 		for k, _ := range scheme.AllKnownTypes() {
+	// 			kinds = append(kinds, k.Kind)
+	// 		}
+	// 		Expect(kinds).To(ContainElement("BOSHDeployment"))
+	// 		Expect(kinds).To(ContainElement("ExtendedSecret"))
+	// 		Expect(kinds).To(ContainElement("ExtendedStatefulSet"))
+	// 	})
+	// })
 
 	// "AddToManager" tested via integration tests
 
@@ -136,8 +138,8 @@ var _ = Describe("Controllers", func() {
 					Expect(len(config.Webhooks)).To(Equal(1))
 
 					wh := config.Webhooks[0]
-					Expect(wh.Name).To(Equal("mutatepods.example.com"))
-					Expect(*wh.ClientConfig.URL).To(Equal("https://foo.com:1234/mutate-pods"))
+					Expect(wh.Name).To(Equal("volume.example.com"))
+					Expect(*wh.ClientConfig.URL).To(Equal("https://foo.com:1234/volume"))
 					Expect(wh.ClientConfig.CABundle).To(ContainSubstring("the-ca-cert"))
 					Expect(*wh.FailurePolicy).To(Equal(admissionregistrationv1beta1.Fail))
 					return nil

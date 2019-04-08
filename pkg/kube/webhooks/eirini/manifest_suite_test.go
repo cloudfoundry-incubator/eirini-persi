@@ -9,5 +9,5 @@ import (
 
 func TestWebhooks(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, `Eirini webhooks Suite`)
+	RunSpecs(t, `Eirini webhooks Suite (Persi)`)
 }
