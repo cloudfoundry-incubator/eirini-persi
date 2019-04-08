@@ -88,8 +88,8 @@ func (s VcapServices) AppendMounts(patchedPod *corev1.Pod, c *corev1.Container) 
 	}
 }
 
-// PatchPod alters the pod given as argument with the required volumes mounted
-func (m *VolumeMutator) PatchPod(patchedPod *corev1.Pod) (*corev1.Pod, error) {
+// MountVcapVolumes alters the pod given as argument with the required volumes mounted
+func (m *VolumeMutator) MountVcapVolumes(patchedPod *corev1.Pod) error {
 	for i := range patchedPod.Spec.Containers {
 		c := &patchedPod.Spec.Containers[i]
 		for _, e := range c.Env {
@@ -99,13 +99,13 @@ func (m *VolumeMutator) PatchPod(patchedPod *corev1.Pod) (*corev1.Pod, error) {
 			var services VcapServices
 			err := json.Unmarshal([]byte(e.Value), &services)
 			if err != nil {
-				return nil, err
+				return err
 			}
 			services.AppendMounts(patchedPod, c)
 			break
 		}
 	}
-	return patchedPod, nil
+	return nil
 }
 
 // NewVolumeMutator returns a new reconcile.Reconciler
@@ -133,7 +133,7 @@ func (m *VolumeMutator) Handle(ctx context.Context, req types.Request) types.Res
 
 	// Patch only applications pod created by Eirini
 	if v, ok := pod.GetLabels()["source_type"]; ok && v == "APP" {
-		podCopy, err = m.PatchPod(podCopy)
+		err = m.MountVcapVolumes(podCopy)
 		if err != nil {
 			return admission.ErrorResponse(http.StatusBadRequest, err)
 		}

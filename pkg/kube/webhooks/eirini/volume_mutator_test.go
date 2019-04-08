@@ -220,4 +220,76 @@ var _ = Describe("Volume Mutator", func() {
 		})
 	})
 
+	Describe("MountVcapVolumes", func() {
+		It("append mounts if pods declare them in VCAP_SERVICES", func() {
+			vcapservices := `{"eirini-persi": [	  {
+				"credentials": {},
+				"label": "eirini-persi",
+				"name": "my-instance",
+				"plan": "hostpath",
+				"tags": [
+					"erini",
+					"kubernetes",
+					"storage"
+				],
+				"volume_mounts": [
+					{
+						"container_dir": "/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47",
+						"device_type": "shared",
+						"mode": "rw",
+						"device": {
+							"volume_id": "the-volume-id1"
+						}
+					},
+					{
+						"container_dir": "/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15ba",
+						"device_type": "shared",
+						"mode": "rw",
+						"device": {
+							"volume_id": "the-volume-id2"
+						}
+					},
+					{
+						"container_dir": "/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15bb",
+						"device_type": "shared",
+						"mode": "rw",
+						"device": {
+							"volume_id": "the-volume-id3"
+						}
+					}
+				]
+			  }
+			]
+		}`
+
+			pod := labeledPod("foo", map[string]string{"source_type": "APP"}, vcapservices)
+			f := generateGetPodFunc(&pod, nil)
+			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
+
+			volumeMutator, ok := mutator.(*webhooks.VolumeMutator)
+			Expect(ok).To(BeTrue())
+
+			err := volumeMutator.MountVcapVolumes(&pod)
+
+			Expect(err).ToNot(HaveOccurred())
+			Expect(pod.Spec.Containers[0].VolumeMounts[0].Name).To(Equal("the-volume-id1"))
+			Expect(pod.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47"))
+			Expect(pod.Spec.Volumes[0].Name).To(Equal("the-volume-id1"))
+			Expect(pod.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName).To(Equal("the-volume-id1"))
+		})
+
+		It("does nothing if env is empty", func() {
+			pod := labeledPod("foo", map[string]string{}, `{}`)
+			f := generateGetPodFunc(&pod, nil)
+			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
+			volumeMutator, ok := mutator.(*webhooks.VolumeMutator)
+			Expect(ok).To(BeTrue())
+
+			err := volumeMutator.MountVcapVolumes(&pod)
+			Expect(err).ToNot(HaveOccurred())
+			Expect(len(pod.Spec.Containers[0].VolumeMounts)).To(Equal(0))
+			Expect(len(pod.Spec.Volumes)).To(Equal(0))
+		})
+	})
+
 })
