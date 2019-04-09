@@ -1,4 +1,4 @@
-package eirini_test
+package webhooks_test
 
 import (
 	"context"
@@ -23,7 +23,7 @@ import (
 	"code.cloudfoundry.org/cf-operator/pkg/kube/util/config"
 	helper "code.cloudfoundry.org/cf-operator/pkg/testhelper"
 	"code.cloudfoundry.org/cf-operator/testing"
-	webhooks "github.com/SUSE/eirini-extensions/pkg/kube/webhooks/eirini"
+	webhooks "github.com/SUSE/eirini-extensions/pkg/kube/webhooks"
 )
 
 // labeledPod defines a pod with labels and with VCAP_SERVICES environment set

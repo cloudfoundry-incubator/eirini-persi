@@ -1,4 +1,4 @@
-package eirini
+package webhooks
 
 import (
 	"code.cloudfoundry.org/cf-operator/pkg/kube/util/config"

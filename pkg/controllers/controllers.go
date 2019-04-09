@@ -19,7 +19,7 @@ import (
 	"code.cloudfoundry.org/cf-operator/pkg/kube/util/config"
 	"github.com/SUSE/eirini-extensions/pkg/util/ctxlog"
 
-	eirini_webhooks "github.com/SUSE/eirini-extensions/pkg/kube/webhooks/eirini"
+	webhooks "github.com/SUSE/eirini-extensions/pkg/kube/webhooks"
 )
 
 var addToManagerFuncs = []func(context.Context, *config.Config, manager.Manager) error{}
@@ -27,7 +27,7 @@ var addToManagerFuncs = []func(context.Context, *config.Config, manager.Manager)
 var addToSchemes = runtime.SchemeBuilder{}
 
 var addHookFuncs = []func(*zap.SugaredLogger, *config.Config, manager.Manager, *webhook.Server) (*admission.Webhook, error){
-	eirini_webhooks.Volume,
+	webhooks.Volume,
 }
 
 // AddToManager adds all Controllers to the Manager

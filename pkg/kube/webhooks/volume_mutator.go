@@ -1,4 +1,4 @@
-package eirini
+package webhooks
 
 import (
 	"context"

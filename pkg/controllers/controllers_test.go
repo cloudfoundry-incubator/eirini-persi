@@ -26,22 +26,6 @@ import (
 )
 
 var _ = Describe("Controllers", func() {
-	// We don't have any controller right now
-
-	// Describe("AddToScheme", func() {
-	// 	It("registers our schemes with the operator", func() {
-	// 		scheme := scheme.Scheme
-	// 		controllers.AddToScheme(scheme)
-	// 		kinds := []string{}
-	// 		for k, _ := range scheme.AllKnownTypes() {
-	// 			kinds = append(kinds, k.Kind)
-	// 		}
-	// 		Expect(kinds).To(ContainElement("BOSHDeployment"))
-	// 		Expect(kinds).To(ContainElement("ExtendedSecret"))
-	// 		Expect(kinds).To(ContainElement("ExtendedStatefulSet"))
-	// 	})
-	// })
-
 	// "AddToManager" tested via integration tests
 
 	Describe("AddHooks", func() {

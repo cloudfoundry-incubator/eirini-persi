@@ -1,4 +1,4 @@
-package eirini_test
+package webhooks_test
 
 import (
 	"testing"
