@@ -16,15 +16,19 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"code.cloudfoundry.org/cf-operator/pkg/credsgen"
-	"github.com/SUSE/eirini-extensions/pkg/util/config"
+	"code.cloudfoundry.org/cf-operator/pkg/kube/util/config"
 	"github.com/SUSE/eirini-extensions/pkg/util/ctxlog"
+
+	webhooks "github.com/SUSE/eirini-extensions/pkg/kube/webhooks"
 )
 
 var addToManagerFuncs = []func(context.Context, *config.Config, manager.Manager) error{}
 
 var addToSchemes = runtime.SchemeBuilder{}
 
-var addHookFuncs = []func(*zap.SugaredLogger, *config.Config, manager.Manager, *webhook.Server) (*admission.Webhook, error){}
+var addHookFuncs = []func(*zap.SugaredLogger, *config.Config, manager.Manager, *webhook.Server) (*admission.Webhook, error){
+	webhooks.Volume,
+}
 
 // AddToManager adds all Controllers to the Manager
 func AddToManager(ctx context.Context, config *config.Config, m manager.Manager) error {
@@ -49,12 +53,12 @@ func AddHooks(ctx context.Context, config *config.Config, m manager.Manager, gen
 
 	disableConfigInstaller := true
 	hookServer, err := webhook.NewServer("cf-operator", m, webhook.ServerOptions{
-		Port:                          config.WebhookServerPort,
-		CertDir:                       webhookConfig.CertDir,
+		Port:    config.WebhookServerPort,
+		CertDir: webhookConfig.CertDir,
 		DisableWebhookConfigInstaller: &disableConfigInstaller,
 		BootstrapOptions: &webhook.BootstrapOptions{
 			MutatingWebhookConfigName: webhookConfig.ConfigName,
-			Host:                      &config.WebhookServerHost,
+			Host: &config.WebhookServerHost,
 			// The user should probably be able to use a service instead.
 			// Service: ??
 		},

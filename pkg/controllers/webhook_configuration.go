@@ -21,7 +21,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	"code.cloudfoundry.org/cf-operator/pkg/credsgen"
-	"github.com/SUSE/eirini-extensions/pkg/util/config"
+	"code.cloudfoundry.org/cf-operator/pkg/kube/util/config"
 	"github.com/SUSE/eirini-extensions/pkg/util/ctxlog"
 )
 

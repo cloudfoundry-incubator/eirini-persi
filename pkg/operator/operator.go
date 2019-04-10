@@ -8,8 +8,8 @@ import (
 
 	credsgen "code.cloudfoundry.org/cf-operator/pkg/credsgen/in_memory_generator"
 
+	"code.cloudfoundry.org/cf-operator/pkg/kube/util/config"
 	"github.com/SUSE/eirini-extensions/pkg/controllers"
-	"github.com/SUSE/eirini-extensions/pkg/util/config"
 	"github.com/SUSE/eirini-extensions/pkg/util/ctxlog"
 )
 
