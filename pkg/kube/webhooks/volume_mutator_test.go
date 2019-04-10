@@ -77,7 +77,6 @@ var _ = Describe("Volume Mutator", func() {
 			f := generateGetPodFunc(&pod, nil)
 
 			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
-
 			resp := mutator.Handle(ctx, request)
 			Expect(len(resp.Patches)).To(Equal(0))
 		})
@@ -172,6 +171,17 @@ var _ = Describe("Volume Mutator", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(pod.Spec.Containers[0].VolumeMounts)).To(Equal(0))
 			Expect(len(pod.Spec.Volumes)).To(Equal(0))
+		})
+
+		It("returns an error if VCAP_SERVICES is not a json", func() {
+			pod := env.DefaultEiriniAppPod("foo", ``)
+			f := generateGetPodFunc(&pod, nil)
+			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
+			volumeMutator, ok := mutator.(*webhooks.VolumeMutator)
+			Expect(ok).To(BeTrue())
+
+			err := volumeMutator.MountVcapVolumes(&pod)
+			Expect(err).To(HaveOccurred())
 		})
 	})
 

@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
+// NewCatalog returns a Catalog, our helper for test cases
 func NewCatalog() Catalog {
 	return Catalog{Catalog: &operator_testing.Catalog{}}
 }
@@ -20,9 +21,10 @@ func NewContext() context.Context {
 	return operator_testing.NewContext()
 }
 
-// Catalog provides several instances for tests
+// Catalog provides several instances for test, based on the cf-operator's catalog
 type Catalog struct{ *operator_testing.Catalog }
 
+// PodWithVcapServices generates a labeled pod with VCAP_SERVICES environment variable set
 func (c *Catalog) PodWithVcapServices(name string, labels map[string]string, vcapServices string) corev1.Pod {
 
 	pod := c.Catalog.LabeledPod(name, labels)
@@ -35,10 +37,12 @@ func (c *Catalog) PodWithVcapServices(name string, labels map[string]string, vca
 	return pod
 }
 
+// DefaultEiriniAppPod generates an Eirini Application pod with VCAP_SERVICES environment variable set
 func (c *Catalog) DefaultEiriniAppPod(name string, vcapServices string) corev1.Pod {
 	return c.PodWithVcapServices(name, map[string]string{"source_type": "APP"}, vcapServices)
 }
 
+// SimplePersiApp generates an Eirini Application pod which requires persistent volume (1 volume)
 func (c *Catalog) SimplePersiApp(name string) corev1.Pod {
 	return c.DefaultEiriniAppPod(name, `{"eirini-persi": [	  {
 		"credentials": {},
@@ -65,6 +69,7 @@ func (c *Catalog) SimplePersiApp(name string) corev1.Pod {
 }`)
 }
 
+// MultipleVolumePersiApp generates an Eirini Application pod which requires persistent volume (3 volumes)
 func (c *Catalog) MultipleVolumePersiApp(name string) corev1.Pod {
 	return c.DefaultEiriniAppPod(name, `{"eirini-persi": [	  {
 		"credentials": {},
