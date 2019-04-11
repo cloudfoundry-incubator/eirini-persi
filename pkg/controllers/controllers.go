@@ -49,10 +49,10 @@ func AddToScheme(s *runtime.Scheme) error {
 func AddHooks(ctx context.Context, config *config.Config, m manager.Manager, generator credsgen.Generator) error {
 	ctxlog.Infof(ctx, "Setting up webhook server on %s:%d", config.WebhookServerHost, config.WebhookServerPort)
 
-	webhookConfig := NewWebhookConfig(m.GetClient(), config, generator, "cf-operator-mutating-hook-"+config.Namespace)
+	webhookConfig := NewWebhookConfig(m.GetClient(), config, generator, "eirini-extensions-mutating-hook-"+config.Namespace)
 
 	disableConfigInstaller := true
-	hookServer, err := webhook.NewServer("cf-operator", m, webhook.ServerOptions{
+	hookServer, err := webhook.NewServer("eirini-extensions", m, webhook.ServerOptions{
 		Port:    config.WebhookServerPort,
 		CertDir: webhookConfig.CertDir,
 		DisableWebhookConfigInstaller: &disableConfigInstaller,
@@ -112,7 +112,7 @@ func setOperatorNamespaceLabel(ctx context.Context, config *config.Config, c cli
 	if labels == nil {
 		labels = map[string]string{}
 	}
-	labels["cf-operator-ns"] = config.Namespace
+	labels["eirini-extensions-ns"] = config.Namespace
 	ns.SetLabels(labels)
 	err = c.Update(ctx, ns)
 

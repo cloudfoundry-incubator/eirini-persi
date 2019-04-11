@@ -29,9 +29,9 @@ var _ = Describe("CLI", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Eventually(session.Out).Should(Say(`Flags:
   -o, --docker-image-org string          Dockerhub organization that provides the operator docker image \(default "cfcontainerization"\)
-  -r, --docker-image-repository string   Dockerhub repository that provides the operator docker image \(default "cf-operator"\)
+  -r, --docker-image-repository string   Dockerhub repository that provides the operator docker image \(default "eirini-extensions"\)
   -t, --docker-image-tag string          Tag of the operator docker image \(default "\d+.\d+.\d+"\)
-  -h, --help                             help for cf-operator
+  -h, --help                             help for eirini-extensions
   -c, --kubeconfig string                Path to a kubeconfig, not required in-cluster
   -n, --namespace string                 Namespace to watch for BOSH deployments \(default "default"\)
   -w, --operator-webhook-host string     Hostname/IP under which the webhook server can be reached from the cluster
@@ -53,7 +53,7 @@ var _ = Describe("CLI", func() {
 		It("should start the server", func() {
 			session, err := act()
 			Expect(err).ToNot(HaveOccurred())
-			Eventually(session.Err).Should(Say(`Starting cf-operator \d+\.\d+\.\d+ with namespace`))
+			Eventually(session.Err).Should(Say(`Starting eirini-extensions \d+\.\d+\.\d+ with namespace`))
 		})
 
 		Context("when specifying namespace", func() {
@@ -69,7 +69,7 @@ var _ = Describe("CLI", func() {
 				It("should start for namespace", func() {
 					session, err := act()
 					Expect(err).ToNot(HaveOccurred())
-					Eventually(session.Err).Should(Say(`Starting cf-operator \d+\.\d+\.\d+ with namespace env-test`))
+					Eventually(session.Err).Should(Say(`Starting eirini-extensions \d+\.\d+\.\d+ with namespace env-test`))
 				})
 			})
 
@@ -77,7 +77,7 @@ var _ = Describe("CLI", func() {
 				It("should start for namespace", func() {
 					session, err := act("--namespace", "switch-test")
 					Expect(err).ToNot(HaveOccurred())
-					Eventually(session.Err).Should(Say(`Starting cf-operator \d+\.\d+\.\d+ with namespace switch-test`))
+					Eventually(session.Err).Should(Say(`Starting eirini-extensions \d+\.\d+\.\d+ with namespace switch-test`))
 				})
 			})
 		})
@@ -87,7 +87,7 @@ var _ = Describe("CLI", func() {
 		It("should show a semantic version number", func() {
 			session, err := act("version")
 			Expect(err).ToNot(HaveOccurred())
-			Eventually(session.Out).Should(Say(`CF-Operator Version: \d+.\d+.\d+`))
+			Eventually(session.Out).Should(Say(`eirini-extensions Version: \d+.\d+.\d+`))
 		})
 	})
 })

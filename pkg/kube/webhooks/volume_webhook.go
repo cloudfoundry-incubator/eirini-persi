@@ -38,7 +38,7 @@ func Volume(log *zap.SugaredLogger, config *config.Config, mgr manager.Manager, 
 		Mutating().
 		NamespaceSelector(&metav1.LabelSelector{
 			MatchLabels: map[string]string{
-				"cf-operator-ns": config.Namespace,
+				"eirini-extensions-ns": config.Namespace,
 			},
 		}).
 		ForType(&corev1.Pod{}).

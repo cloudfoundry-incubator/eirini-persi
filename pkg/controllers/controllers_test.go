@@ -61,7 +61,7 @@ var _ = Describe("Controllers", func() {
 				ns := object.(*unstructured.Unstructured)
 				labels := ns.GetLabels()
 
-				Expect(labels["cf-operator-ns"]).To(Equal(config.Namespace))
+				Expect(labels["eirini-extensions-ns"]).To(Equal(config.Namespace))
 
 				return nil
 			})
@@ -72,12 +72,12 @@ var _ = Describe("Controllers", func() {
 
 		Context("if there is no cert secret yet", func() {
 			It("generates and persists the certificates on disk and in a secret", func() {
-				Expect(afero.Exists(config.Fs, "/tmp/cf-operator-certs/key.pem")).To(BeFalse())
+				Expect(afero.Exists(config.Fs, "/tmp/eirini-extensions-certs/key.pem")).To(BeFalse())
 
 				err := controllers.AddHooks(ctx, config, manager, generator)
 				Expect(err).ToNot(HaveOccurred())
 
-				Expect(afero.Exists(config.Fs, "/tmp/cf-operator-certs/key.pem")).To(BeTrue())
+				Expect(afero.Exists(config.Fs, "/tmp/eirini-extensions-certs/key.pem")).To(BeTrue())
 				Expect(generator.GenerateCertificateCallCount()).To(Equal(2)) // Generate CA and certificate
 				Expect(client.CreateCallCount()).To(Equal(2))                 // Persist secret and the webhook config
 			})
@@ -88,7 +88,7 @@ var _ = Describe("Controllers", func() {
 				secret := &unstructured.Unstructured{
 					Object: map[string]interface{}{
 						"metadata": map[string]interface{}{
-							"name":      "cf-operator-webhook-server-cert",
+							"name":      "eirini-extensions-webhook-server-cert",
 							"namespace": config.Namespace,
 						},
 						"data": map[string]interface{}{
@@ -118,7 +118,7 @@ var _ = Describe("Controllers", func() {
 			It("generates the webhook configuration", func() {
 				client.CreateCalls(func(context context.Context, object runtime.Object) error {
 					config := object.(*admissionregistrationv1beta1.MutatingWebhookConfiguration)
-					Expect(config.Name).To(Equal("cf-operator-mutating-hook-" + config.Namespace))
+					Expect(config.Name).To(Equal("eirini-extensions-mutating-hook-" + config.Namespace))
 					Expect(len(config.Webhooks)).To(Equal(1))
 
 					wh := config.Webhooks[0]
