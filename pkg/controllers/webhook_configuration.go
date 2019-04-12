@@ -43,7 +43,7 @@ type WebhookConfig struct {
 func NewWebhookConfig(c client.Client, config *config.Config, generator credsgen.Generator, configName string) *WebhookConfig {
 	return &WebhookConfig{
 		ConfigName: configName,
-		CertDir:    "/tmp/cf-operator-certs",
+		CertDir:    "/tmp/eirini-extensions-certs",
 		client:     c,
 		config:     config,
 		generator:  generator,
@@ -54,7 +54,7 @@ func NewWebhookConfig(c client.Client, config *config.Config, generator credsgen
 // webhook server
 func (f *WebhookConfig) setupCertificate(ctx context.Context) error {
 	secretNamespacedName := machinerytypes.NamespacedName{
-		Name:      "cf-operator-webhook-server-cert",
+		Name:      "eirini-extensions-webhook-server-cert",
 		Namespace: f.config.Namespace,
 	}
 
