@@ -27,7 +27,7 @@ var (
 
 var rootCmd = &cobra.Command{
 	Use:   "eirini-ext",
-	Short: "eirini-ext-operator manages BOSH deployments on Kubernetes",
+	Short: "eirini-ext-operator manages Eirini apps on Kubernetes",
 	Run: func(cmd *cobra.Command, args []string) {
 		defer log.Sync()
 
@@ -81,7 +81,7 @@ func init() {
 	pf := rootCmd.PersistentFlags()
 
 	pf.StringP("kubeconfig", "c", "", "Path to a kubeconfig, not required in-cluster")
-	pf.StringP("namespace", "n", "default", "Namespace to watch for BOSH deployments")
+	pf.StringP("namespace", "n", "eirini", "Namespace to watch for Eirini apps")
 	pf.StringP("operator-webhook-host", "w", "", "Hostname/IP under which the webhook server can be reached from the cluster")
 	pf.StringP("operator-webhook-port", "p", "2999", "Port the webhook server listens on")
 	viper.BindPFlag("kubeconfig", pf.Lookup("kubeconfig"))

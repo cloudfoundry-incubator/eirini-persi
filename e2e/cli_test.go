@@ -28,12 +28,9 @@ var _ = Describe("CLI", func() {
 			session, err := act("help")
 			Expect(err).ToNot(HaveOccurred())
 			Eventually(session.Out).Should(Say(`Flags:
-  -o, --docker-image-org string          Dockerhub organization that provides the operator docker image \(default "cfcontainerization"\)
-  -r, --docker-image-repository string   Dockerhub repository that provides the operator docker image \(default "eirini-extensions"\)
-  -t, --docker-image-tag string          Tag of the operator docker image \(default "\d+.\d+.\d+"\)
   -h, --help                             help for eirini-extensions
   -c, --kubeconfig string                Path to a kubeconfig, not required in-cluster
-  -n, --namespace string                 Namespace to watch for BOSH deployments \(default "default"\)
+  -n, --namespace string                 Namespace to watch for Eirini apps \(default "eirini"\)
   -w, --operator-webhook-host string     Hostname/IP under which the webhook server can be reached from the cluster
   -p, --operator-webhook-port string     Port the webhook server listens on \(default "2999"\)`))
 		})
@@ -87,7 +84,7 @@ var _ = Describe("CLI", func() {
 		It("should show a semantic version number", func() {
 			session, err := act("version")
 			Expect(err).ToNot(HaveOccurred())
-			Eventually(session.Out).Should(Say(`eirini-extensions Version: \d+.\d+.\d+`))
+			Eventually(session.Out).Should(Say(`Eirini Extensions Operator Version: \d+.\d+.\d+`))
 		})
 	})
 })
