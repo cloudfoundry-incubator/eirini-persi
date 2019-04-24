@@ -15,6 +15,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 )
 
 // Device is the device which the volume is refered to
@@ -140,4 +141,24 @@ func (m *VolumeMutator) Handle(ctx context.Context, req types.Request) types.Res
 	}
 
 	return admission.PatchResponse(pod, podCopy)
+}
+
+// VolumeMutator implements inject.Client.
+// A client will be automatically injected.
+var _ inject.Client = &VolumeMutator{}
+
+// InjectClient injects the client.
+func (m *VolumeMutator) InjectClient(c client.Client) error {
+	m.client = c
+	return nil
+}
+
+// VolumeMutator implements inject.Decoder.
+// A decoder will be automatically injected.
+var _ inject.Decoder = &VolumeMutator{}
+
+// InjectDecoder injects the decoder.
+func (m *VolumeMutator) InjectDecoder(d types.Decoder) error {
+	m.decoder = d
+	return nil
 }
