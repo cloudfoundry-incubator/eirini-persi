@@ -10,12 +10,10 @@ import (
 	"github.com/SUSE/eirini-extensions/pkg/operator"
 	"github.com/SUSE/eirini-extensions/pkg/util/ctxlog"
 	"github.com/SUSE/eirini-extensions/version"
-
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc" // from https://github.com/kubernetes/client-go/issues/345
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
@@ -45,10 +43,6 @@ var rootCmd = &cobra.Command{
 
 		webhookHost := viper.GetString("operator-webhook-host")
 		webhookPort := viper.GetInt32("operator-webhook-port")
-
-		if webhookHost == "" {
-			log.Fatal("required flag 'operator-webhook-host' not set (env variable: OPERATOR_WEBHOOK_HOST)")
-		}
 
 		config := &config.Config{
 			CtxTimeOut:        10 * time.Second,
