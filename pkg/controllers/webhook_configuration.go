@@ -98,9 +98,11 @@ func (f *WebhookConfig) setupCertificate(ctx context.Context) error {
 
 		// Generate CA
 		caRequest := credsgen.CertificateGenerationRequest{
-			CommonName: "SCF CA",
-			IsCA:       true,
+			CommonName:       "SCF CA",
+			IsCA:             true,
+			AlternativeNames: []string{f.config.WebhookServerHost},
 		}
+
 		caCert, err := f.generator.GenerateCertificate("webhook-server-ca", caRequest)
 		if err != nil {
 			return err
