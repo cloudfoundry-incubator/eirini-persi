@@ -13,9 +13,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 )
 
 // Device is the device which the volume is refered to
@@ -31,8 +31,13 @@ type VolumeMount struct {
 	Device       Device `json:"device"`
 }
 
+type Credentials struct {
+	VolumeID string `json:"volume_id"` // VolumeID represents a Persistent Volume Claim
+}
+
 // VcapService contains the service configuration. We look only at volume mounts here
 type VcapService struct {
+	Credentials  Credentials   `json:"credentials"`
 	VolumeMounts []VolumeMount `json:"volume_mounts"`
 }
 
@@ -70,20 +75,26 @@ func containsContainerMount(containermounts []corev1.VolumeMount, mount string) 
 func (s VcapServices) AppendMounts(patchedPod *corev1.Pod, c *corev1.Container) {
 	for _, volumeService := range s.ServiceMap {
 		for _, volumeMount := range volumeService.VolumeMounts {
-			if !containsContainerMount(c.VolumeMounts, volumeMount.Device.VolumeID) {
+			vid := volumeService.Credentials.VolumeID
+			if vid == "" {
+				vid = volumeMount.Device.VolumeID
+			}
+			if !containsContainerMount(c.VolumeMounts, vid) {
 				patchedPod.Spec.Volumes = append(patchedPod.Spec.Volumes, corev1.Volume{
-					Name: volumeMount.Device.VolumeID,
+					Name: vid,
 					VolumeSource: corev1.VolumeSource{
 						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: volumeMount.Device.VolumeID,
+							ClaimName: vid,
 						},
 					},
 				})
 
 				c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
-					Name:      volumeMount.Device.VolumeID,
+					Name:      vid,
 					MountPath: volumeMount.ContainerDir,
 				})
+
+				patchedPod.Spec.InitContainers = []corev1.Container{{Image: c.Image, VolumeMounts: c.VolumeMounts, Command: []string{"sh", "-c", "chown -R vcap:vcap " + volumeMount.ContainerDir}}}
 			}
 		}
 	}
@@ -97,6 +108,8 @@ func (m *VolumeMutator) MountVcapVolumes(patchedPod *corev1.Pod) error {
 			if e.Name != "VCAP_SERVICES" {
 				continue
 			}
+			m.log.Debug("Appending volumes to the Eirini App")
+
 			var services VcapServices
 			err := json.Unmarshal([]byte(e.Value), &services)
 			if err != nil {
@@ -131,9 +144,11 @@ func (m *VolumeMutator) Handle(ctx context.Context, req types.Request) types.Res
 		return admission.ErrorResponse(http.StatusBadRequest, err)
 	}
 	podCopy := pod.DeepCopy()
+	m.log.Debugf("Handling webhook request for POD: %s (%s)", podCopy.Name, podCopy.Namespace)
 
 	// Patch only applications pod created by Eirini
 	if v, ok := pod.GetLabels()["source_type"]; ok && v == "APP" {
+
 		err = m.MountVcapVolumes(podCopy)
 		if err != nil {
 			return admission.ErrorResponse(http.StatusBadRequest, err)
