@@ -32,6 +32,17 @@ func generateGetPodFunc(pod *corev1.Pod, err error) webhooks.GetPodFuncType {
 	}
 }
 
+func ExpectInitContainer(pod *corev1.Pod) {
+	Expect(len(pod.Spec.InitContainers)).To(Equal(1))
+	Expect(pod.Spec.InitContainers[0].Name).To(Equal("eirini-persi"))
+	Expect(pod.Spec.InitContainers[0].Command).To(Equal([]string{
+		"sh",
+		"-c",
+		fmt.Sprintf("chown -R vcap:vcap %s", pod.Spec.Containers[0].VolumeMounts[0].MountPath),
+	}))
+	Expect(*pod.Spec.InitContainers[0].SecurityContext.RunAsUser).To(Equal(int64(0)))
+}
+
 var _ = Describe("Volume Mutator", func() {
 
 	var (
@@ -98,7 +109,7 @@ var _ = Describe("Volume Mutator", func() {
 			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
 			resp := mutator.Handle(ctx, request)
 
-			Expect(len(resp.Patches)).To(Equal(2))
+			Expect(len(resp.Patches)).To(Equal(3))
 		})
 
 		It("does act if the source_type: APP label is set and 3 volumes are supplied", func() {
@@ -106,10 +117,11 @@ var _ = Describe("Volume Mutator", func() {
 			f := generateGetPodFunc(&pod, nil)
 			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
 			resp := mutator.Handle(ctx, request)
-
-			Expect(len(resp.Patches)).To(Equal(2))
+			fmt.Println(fmt.Printf("%v", resp.Patches))
+			Expect(len(resp.Patches)).To(Equal(3))
 			Expect(len(resp.Patches[0].Value.([]interface{}))).To(Equal(3))
-			Expect(len(resp.Patches[1].Value.([]interface{}))).To(Equal(3))
+			Expect(len(resp.Patches[1].Value.([]interface{}))).To(Equal(1))
+			Expect(len(resp.Patches[2].Value.([]interface{}))).To(Equal(3))
 		})
 	})
 
@@ -117,19 +129,26 @@ var _ = Describe("Volume Mutator", func() {
 		It("append mounts if are not existing", func() {
 			var services webhooks.VcapServices
 			pod := env.DefaultEiriniAppPod("bar", ``)
-			services.ServiceMap = append(services.ServiceMap, webhooks.VcapService{VolumeMounts: []webhooks.VolumeMount{webhooks.VolumeMount{ContainerDir: "/foo/", Device: webhooks.Device{VolumeID: "foo"}}}})
+			services.ServiceMap = append(services.ServiceMap, webhooks.VcapService{
+				Credentials:  webhooks.Credentials{VolumeID: "foo"},
+				VolumeMounts: []webhooks.VolumeMount{webhooks.VolumeMount{ContainerDir: "/foo/"}},
+			})
 			services.AppendMounts(&pod, &pod.Spec.Containers[0])
 
 			Expect(pod.Spec.Containers[0].VolumeMounts[0].Name).To(Equal("foo"))
 			Expect(pod.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/foo/"))
 			Expect(pod.Spec.Volumes[0].Name).To(Equal("foo"))
 			Expect(pod.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName).To(Equal("foo"))
+			ExpectInitContainer(&pod)
 		})
 
 		It("is idempotent and does not append already existing mounts", func() {
 			var services webhooks.VcapServices
 			pod := env.DefaultEiriniAppPod("bar", ``)
-			services.ServiceMap = append(services.ServiceMap, webhooks.VcapService{VolumeMounts: []webhooks.VolumeMount{webhooks.VolumeMount{ContainerDir: "/foo/", Device: webhooks.Device{VolumeID: "foo"}}}})
+			services.ServiceMap = append(services.ServiceMap, webhooks.VcapService{
+				Credentials:  webhooks.Credentials{VolumeID: "foo"},
+				VolumeMounts: []webhooks.VolumeMount{webhooks.VolumeMount{ContainerDir: "/foo/"}},
+			})
 
 			Expect(len(pod.Spec.Containers[0].VolumeMounts)).To(Equal(0))
 			Expect(len(pod.Spec.Volumes)).To(Equal(0))
@@ -158,6 +177,7 @@ var _ = Describe("Volume Mutator", func() {
 			Expect(pod.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47"))
 			Expect(pod.Spec.Volumes[0].Name).To(Equal("the-volume-id1"))
 			Expect(pod.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName).To(Equal("the-volume-id1"))
+			ExpectInitContainer(&pod)
 		})
 
 		It("does nothing if env is empty", func() {

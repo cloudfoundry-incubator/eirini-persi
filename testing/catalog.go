@@ -45,7 +45,7 @@ func (c *Catalog) DefaultEiriniAppPod(name string, vcapServices string) corev1.P
 // SimplePersiApp generates an Eirini Application pod which requires persistent volume (1 volume)
 func (c *Catalog) SimplePersiApp(name string) corev1.Pod {
 	return c.DefaultEiriniAppPod(name, `{"eirini-persi": [	  {
-		"credentials": {},
+		"credentials": { "volume_id": "the-volume-id" },
 		"label": "eirini-persi",
 		"name": "my-instance",
 		"plan": "hostpath",
@@ -58,10 +58,7 @@ func (c *Catalog) SimplePersiApp(name string) corev1.Pod {
 		  {
 			"container_dir": "/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47",
 			"device_type": "shared",
-			"mode": "rw",
-			"device": {
-				"volume_id": "the-volume-id"
-			}
+			"mode": "rw"
 		  }
 		]
 	  }
@@ -72,7 +69,7 @@ func (c *Catalog) SimplePersiApp(name string) corev1.Pod {
 // MultipleVolumePersiApp generates an Eirini Application pod which requires persistent volume (3 volumes)
 func (c *Catalog) MultipleVolumePersiApp(name string) corev1.Pod {
 	return c.DefaultEiriniAppPod(name, `{"eirini-persi": [	  {
-		"credentials": {},
+		"credentials": { "volume_id": "the-volume-id1" },
 		"label": "eirini-persi",
 		"name": "my-instance",
 		"plan": "hostpath",
@@ -85,26 +82,43 @@ func (c *Catalog) MultipleVolumePersiApp(name string) corev1.Pod {
 			{
 				"container_dir": "/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47",
 				"device_type": "shared",
-				"mode": "rw",
-				"device": {
-					"volume_id": "the-volume-id1"
-				}
-			},
+				"mode": "rw"
+			}
+		]
+	  },
+	  {
+		"credentials": { "volume_id": "the-volume-id2" },
+		"label": "eirini-persi",
+		"name": "my-instance",
+		"plan": "hostpath",
+		"tags": [
+			"erini",
+			"kubernetes",
+			"storage"
+		],
+		"volume_mounts": [
 			{
 				"container_dir": "/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47",
 				"device_type": "shared",
-				"mode": "rw",
-				"device": {
-					"volume_id": "the-volume-id2"
-				}
-			},
+				"mode": "rw"
+			}
+		]
+	  },
+	  {
+		"credentials": { "volume_id": "the-volume-id3" },
+		"label": "eirini-persi",
+		"name": "my-instance",
+		"plan": "hostpath",
+		"tags": [
+			"erini",
+			"kubernetes",
+			"storage"
+		],
+		"volume_mounts": [
 			{
 				"container_dir": "/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47",
 				"device_type": "shared",
-				"mode": "rw",
-				"device": {
-					"volume_id": "the-volume-id3"
-				}
+				"mode": "rw"
 			}
 		]
 	  }

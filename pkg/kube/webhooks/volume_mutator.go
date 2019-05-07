@@ -19,17 +19,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
 )
 
-// Device is the device which the volume is refered to
-type Device struct {
-	VolumeID string `json:"volume_id"` // VolumeID represents a Persistent Volume Claim
-}
-
 // VolumeMount is a volume assigned to the app
 type VolumeMount struct {
 	ContainerDir string `json:"container_dir"`
 	DeviceType   string `json:"device_type"`
 	Mode         string `json:"mode"`
-	Device       Device `json:"device"`
 }
 
 type Credentials struct {
@@ -76,22 +70,18 @@ func containsContainerMount(containermounts []corev1.VolumeMount, mount string) 
 func (s VcapServices) AppendMounts(patchedPod *corev1.Pod, c *corev1.Container) {
 	for _, volumeService := range s.ServiceMap {
 		for _, volumeMount := range volumeService.VolumeMounts {
-			vid := volumeService.Credentials.VolumeID
-			if vid == "" {
-				vid = volumeMount.Device.VolumeID
-			}
-			if !containsContainerMount(c.VolumeMounts, vid) {
+			if !containsContainerMount(c.VolumeMounts, volumeService.Credentials.VolumeID) {
 				patchedPod.Spec.Volumes = append(patchedPod.Spec.Volumes, corev1.Volume{
-					Name: vid,
+					Name: volumeService.Credentials.VolumeID,
 					VolumeSource: corev1.VolumeSource{
 						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: vid,
+							ClaimName: volumeService.Credentials.VolumeID,
 						},
 					},
 				})
 
 				c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
-					Name:      vid,
+					Name:      volumeService.Credentials.VolumeID,
 					MountPath: volumeMount.ContainerDir,
 				})
 				u := int64(0)
