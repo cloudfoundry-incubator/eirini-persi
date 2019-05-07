@@ -3,6 +3,7 @@ package webhooks
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"code.cloudfoundry.org/cf-operator/pkg/kube/util/config"
@@ -93,8 +94,18 @@ func (s VcapServices) AppendMounts(patchedPod *corev1.Pod, c *corev1.Container) 
 					Name:      vid,
 					MountPath: volumeMount.ContainerDir,
 				})
-
-				patchedPod.Spec.InitContainers = []corev1.Container{{Image: c.Image, VolumeMounts: c.VolumeMounts, Command: []string{"sh", "-c", "chown -R vcap:vcap " + volumeMount.ContainerDir}}}
+				u := int64(0)
+				patchedPod.Spec.InitContainers = []corev1.Container{{
+					SecurityContext: &corev1.SecurityContext{RunAsUser: &u},
+					Name:            "eirini-persi",
+					Image:           c.Image,
+					VolumeMounts:    c.VolumeMounts,
+					Command: []string{
+						"sh",
+						"-c",
+						fmt.Sprintf("chown -R vcap:vcap %s", volumeMount.ContainerDir),
+					},
+				}}
 			}
 		}
 	}
