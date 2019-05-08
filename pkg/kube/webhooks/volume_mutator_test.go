@@ -32,15 +32,29 @@ func generateGetPodFunc(pod *corev1.Pod, err error) webhooks.GetPodFuncType {
 	}
 }
 
-func ExpectInitContainer(pod *corev1.Pod) {
-	Expect(len(pod.Spec.InitContainers)).To(Equal(1))
-	Expect(pod.Spec.InitContainers[0].Name).To(Equal("eirini-persi"))
-	Expect(pod.Spec.InitContainers[0].Command).To(Equal([]string{
-		"sh",
-		"-c",
-		fmt.Sprintf("chown -R vcap:vcap %s", pod.Spec.Containers[0].VolumeMounts[0].MountPath),
-	}))
-	Expect(*pod.Spec.InitContainers[0].SecurityContext.RunAsUser).To(Equal(int64(0)))
+func decodePatches(resp types.Response) string {
+	var r string
+	for _, patch := range resp.Patches {
+		r += patch.Json()
+	}
+	return r
+}
+
+func ExpectInitContainer(pod *corev1.Pod, howmany int) {
+	Expect(len(pod.Spec.InitContainers)).To(Equal(howmany))
+	Expect(len(pod.Spec.Containers[0].VolumeMounts)).To(Equal(howmany))
+
+	for i, vm := range pod.Spec.Containers[0].VolumeMounts {
+
+		Expect(pod.Spec.InitContainers[i].Name).To(Equal(fmt.Sprintf("eirini-persi-%s", vm.Name)))
+		Expect(pod.Spec.InitContainers[i].Image).To(Equal(pod.Spec.Containers[0].Image))
+		Expect(pod.Spec.InitContainers[i].Command).To(Equal([]string{
+			"sh",
+			"-c",
+			fmt.Sprintf("chown -R vcap:vcap %s", vm.MountPath),
+		}))
+		Expect(*pod.Spec.InitContainers[i].SecurityContext.RunAsUser).To(Equal(int64(0)))
+	}
 }
 
 var _ = Describe("Volume Mutator", func() {
@@ -117,16 +131,17 @@ var _ = Describe("Volume Mutator", func() {
 			f := generateGetPodFunc(&pod, nil)
 			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
 			resp := mutator.Handle(ctx, request)
-			fmt.Println(fmt.Printf("%v", resp.Patches))
 			Expect(len(resp.Patches)).To(Equal(3))
-			Expect(len(resp.Patches[0].Value.([]interface{}))).To(Equal(3))
-			Expect(len(resp.Patches[1].Value.([]interface{}))).To(Equal(1))
-			Expect(len(resp.Patches[2].Value.([]interface{}))).To(Equal(3))
+			ops := env.MultipleVolumePersiAppOps()
+			Expect(len(resp.Patches)).To(Equal(len(ops)))
+			for _, op := range ops {
+				Expect(decodePatches(resp)).Should(ContainSubstring(op))
+			}
 		})
 	})
 
 	Describe("AppendMounts", func() {
-		It("append mounts if are not existing", func() {
+		It("append mounts if are existing", func() {
 			var services webhooks.VcapServices
 			pod := env.DefaultEiriniAppPod("bar", ``)
 			services.ServiceMap = append(services.ServiceMap, webhooks.VcapService{
@@ -139,7 +154,7 @@ var _ = Describe("Volume Mutator", func() {
 			Expect(pod.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/foo/"))
 			Expect(pod.Spec.Volumes[0].Name).To(Equal("foo"))
 			Expect(pod.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName).To(Equal("foo"))
-			ExpectInitContainer(&pod)
+			ExpectInitContainer(&pod, 1)
 		})
 
 		It("is idempotent and does not append already existing mounts", func() {
@@ -177,7 +192,7 @@ var _ = Describe("Volume Mutator", func() {
 			Expect(pod.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47"))
 			Expect(pod.Spec.Volumes[0].Name).To(Equal("the-volume-id1"))
 			Expect(pod.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName).To(Equal("the-volume-id1"))
-			ExpectInitContainer(&pod)
+			ExpectInitContainer(&pod, 3)
 		})
 
 		It("does nothing if env is empty", func() {

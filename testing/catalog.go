@@ -66,6 +66,14 @@ func (c *Catalog) SimplePersiApp(name string) corev1.Pod {
 }`)
 }
 
+func (c *Catalog) MultipleVolumePersiAppOps() []string {
+	return []string{
+		`{"op":"add","path":"/spec/containers/0/volumeMounts","value":[{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id1"},{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id2"},{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id3"}]}`,
+		`{"op":"add","path":"/spec/volumes","value":[{"name":"the-volume-id1","persistentVolumeClaim":{"claimName":"the-volume-id1"}},{"name":"the-volume-id2","persistentVolumeClaim":{"claimName":"the-volume-id2"}},{"name":"the-volume-id3","persistentVolumeClaim":{"claimName":"the-volume-id3"}}]}`,
+		`{"op":"add","path":"/spec/initContainers","value":[{"command":["sh","-c","chown -R vcap:vcap /var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47"],"image":"busybox","name":"eirini-persi-the-volume-id1","resources":{},"securityContext":{"runAsUser":0},"volumeMounts":[{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id1"}]},{"command":["sh","-c","chown -R vcap:vcap /var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47"],"image":"busybox","name":"eirini-persi-the-volume-id2","resources":{},"securityContext":{"runAsUser":0},"volumeMounts":[{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id1"},{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id2"}]},{"command":["sh","-c","chown -R vcap:vcap /var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47"],"image":"busybox","name":"eirini-persi-the-volume-id3","resources":{},"securityContext":{"runAsUser":0},"volumeMounts":[{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id1"},{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id2"},{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id3"}]}]}`,
+	}
+}
+
 // MultipleVolumePersiApp generates an Eirini Application pod which requires persistent volume (3 volumes)
 func (c *Catalog) MultipleVolumePersiApp(name string) corev1.Pod {
 	return c.DefaultEiriniAppPod(name, `{"eirini-persi": [	  {
