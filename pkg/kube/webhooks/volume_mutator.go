@@ -85,9 +85,9 @@ func (s VcapServices) AppendMounts(patchedPod *corev1.Pod, c *corev1.Container) 
 					MountPath: volumeMount.ContainerDir,
 				})
 				u := int64(0)
-				patchedPod.Spec.InitContainers = []corev1.Container{{
+				patchedPod.Spec.InitContainers = append(patchedPod.Spec.InitContainers, corev1.Container{
 					SecurityContext: &corev1.SecurityContext{RunAsUser: &u},
-					Name:            "eirini-persi",
+					Name:            fmt.Sprintf("eirini-persi-%s", volumeService.Credentials.VolumeID),
 					Image:           c.Image,
 					VolumeMounts:    c.VolumeMounts,
 					Command: []string{
@@ -95,7 +95,7 @@ func (s VcapServices) AppendMounts(patchedPod *corev1.Pod, c *corev1.Container) 
 						"-c",
 						fmt.Sprintf("chown -R vcap:vcap %s", volumeMount.ContainerDir),
 					},
-				}}
+				})
 			}
 		}
 	}
