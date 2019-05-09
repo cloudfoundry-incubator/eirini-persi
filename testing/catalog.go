@@ -45,7 +45,7 @@ func (c *Catalog) DefaultEiriniAppPod(name string, vcapServices string) corev1.P
 // SimplePersiApp generates an Eirini Application pod which requires persistent volume (1 volume)
 func (c *Catalog) SimplePersiApp(name string) corev1.Pod {
 	return c.DefaultEiriniAppPod(name, `{"eirini-persi": [	  {
-		"credentials": {},
+		"credentials": { "volume_id": "the-volume-id" },
 		"label": "eirini-persi",
 		"name": "my-instance",
 		"plan": "hostpath",
@@ -58,10 +58,7 @@ func (c *Catalog) SimplePersiApp(name string) corev1.Pod {
 		  {
 			"container_dir": "/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47",
 			"device_type": "shared",
-			"mode": "rw",
-			"device": {
-				"volume_id": "the-volume-id"
-			}
+			"mode": "rw"
 		  }
 		]
 	  }
@@ -69,10 +66,18 @@ func (c *Catalog) SimplePersiApp(name string) corev1.Pod {
 }`)
 }
 
+func (c *Catalog) MultipleVolumePersiAppOps() []string {
+	return []string{
+		`{"op":"add","path":"/spec/containers/0/volumeMounts","value":[{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id1"},{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id2"},{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id3"}]}`,
+		`{"op":"add","path":"/spec/volumes","value":[{"name":"the-volume-id1","persistentVolumeClaim":{"claimName":"the-volume-id1"}},{"name":"the-volume-id2","persistentVolumeClaim":{"claimName":"the-volume-id2"}},{"name":"the-volume-id3","persistentVolumeClaim":{"claimName":"the-volume-id3"}}]}`,
+		`{"op":"add","path":"/spec/initContainers","value":[{"command":["sh","-c","chown -R vcap:vcap /var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47"],"image":"busybox","name":"eirini-persi-the-volume-id1","resources":{},"securityContext":{"runAsUser":0},"volumeMounts":[{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id1"}]},{"command":["sh","-c","chown -R vcap:vcap /var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47"],"image":"busybox","name":"eirini-persi-the-volume-id2","resources":{},"securityContext":{"runAsUser":0},"volumeMounts":[{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id1"},{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id2"}]},{"command":["sh","-c","chown -R vcap:vcap /var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47"],"image":"busybox","name":"eirini-persi-the-volume-id3","resources":{},"securityContext":{"runAsUser":0},"volumeMounts":[{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id1"},{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id2"},{"mountPath":"/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47","name":"the-volume-id3"}]}]}`,
+	}
+}
+
 // MultipleVolumePersiApp generates an Eirini Application pod which requires persistent volume (3 volumes)
 func (c *Catalog) MultipleVolumePersiApp(name string) corev1.Pod {
 	return c.DefaultEiriniAppPod(name, `{"eirini-persi": [	  {
-		"credentials": {},
+		"credentials": { "volume_id": "the-volume-id1" },
 		"label": "eirini-persi",
 		"name": "my-instance",
 		"plan": "hostpath",
@@ -85,26 +90,43 @@ func (c *Catalog) MultipleVolumePersiApp(name string) corev1.Pod {
 			{
 				"container_dir": "/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47",
 				"device_type": "shared",
-				"mode": "rw",
-				"device": {
-					"volume_id": "the-volume-id1"
-				}
-			},
+				"mode": "rw"
+			}
+		]
+	  },
+	  {
+		"credentials": { "volume_id": "the-volume-id2" },
+		"label": "eirini-persi",
+		"name": "my-instance",
+		"plan": "hostpath",
+		"tags": [
+			"erini",
+			"kubernetes",
+			"storage"
+		],
+		"volume_mounts": [
 			{
 				"container_dir": "/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47",
 				"device_type": "shared",
-				"mode": "rw",
-				"device": {
-					"volume_id": "the-volume-id2"
-				}
-			},
+				"mode": "rw"
+			}
+		]
+	  },
+	  {
+		"credentials": { "volume_id": "the-volume-id3" },
+		"label": "eirini-persi",
+		"name": "my-instance",
+		"plan": "hostpath",
+		"tags": [
+			"erini",
+			"kubernetes",
+			"storage"
+		],
+		"volume_mounts": [
 			{
 				"container_dir": "/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47",
 				"device_type": "shared",
-				"mode": "rw",
-				"device": {
-					"volume_id": "the-volume-id3"
-				}
+				"mode": "rw"
 			}
 		]
 	  }

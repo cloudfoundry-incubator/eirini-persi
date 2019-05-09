@@ -3,6 +3,7 @@ package webhooks
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"code.cloudfoundry.org/cf-operator/pkg/kube/util/config"
@@ -13,26 +14,25 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 )
-
-// Device is the device which the volume is refered to
-type Device struct {
-	VolumeID string `json:"volume_id"` // VolumeID represents a Persistent Volume Claim
-}
 
 // VolumeMount is a volume assigned to the app
 type VolumeMount struct {
 	ContainerDir string `json:"container_dir"`
 	DeviceType   string `json:"device_type"`
 	Mode         string `json:"mode"`
-	Device       Device `json:"device"`
+}
+
+type Credentials struct {
+	VolumeID string `json:"volume_id"` // VolumeID represents a Persistent Volume Claim
 }
 
 // VcapService contains the service configuration. We look only at volume mounts here
 type VcapService struct {
+	Credentials  Credentials   `json:"credentials"`
 	VolumeMounts []VolumeMount `json:"volume_mounts"`
 }
 
@@ -70,19 +70,31 @@ func containsContainerMount(containermounts []corev1.VolumeMount, mount string) 
 func (s VcapServices) AppendMounts(patchedPod *corev1.Pod, c *corev1.Container) {
 	for _, volumeService := range s.ServiceMap {
 		for _, volumeMount := range volumeService.VolumeMounts {
-			if !containsContainerMount(c.VolumeMounts, volumeMount.Device.VolumeID) {
+			if !containsContainerMount(c.VolumeMounts, volumeService.Credentials.VolumeID) {
 				patchedPod.Spec.Volumes = append(patchedPod.Spec.Volumes, corev1.Volume{
-					Name: volumeMount.Device.VolumeID,
+					Name: volumeService.Credentials.VolumeID,
 					VolumeSource: corev1.VolumeSource{
 						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-							ClaimName: volumeMount.Device.VolumeID,
+							ClaimName: volumeService.Credentials.VolumeID,
 						},
 					},
 				})
 
 				c.VolumeMounts = append(c.VolumeMounts, corev1.VolumeMount{
-					Name:      volumeMount.Device.VolumeID,
+					Name:      volumeService.Credentials.VolumeID,
 					MountPath: volumeMount.ContainerDir,
+				})
+				u := int64(0)
+				patchedPod.Spec.InitContainers = append(patchedPod.Spec.InitContainers, corev1.Container{
+					SecurityContext: &corev1.SecurityContext{RunAsUser: &u},
+					Name:            fmt.Sprintf("eirini-persi-%s", volumeService.Credentials.VolumeID),
+					Image:           c.Image,
+					VolumeMounts:    c.VolumeMounts,
+					Command: []string{
+						"sh",
+						"-c",
+						fmt.Sprintf("chown -R vcap:vcap %s", volumeMount.ContainerDir),
+					},
 				})
 			}
 		}
@@ -97,6 +109,8 @@ func (m *VolumeMutator) MountVcapVolumes(patchedPod *corev1.Pod) error {
 			if e.Name != "VCAP_SERVICES" {
 				continue
 			}
+			m.log.Debug("Appending volumes to the Eirini App")
+
 			var services VcapServices
 			err := json.Unmarshal([]byte(e.Value), &services)
 			if err != nil {
@@ -131,9 +145,11 @@ func (m *VolumeMutator) Handle(ctx context.Context, req types.Request) types.Res
 		return admission.ErrorResponse(http.StatusBadRequest, err)
 	}
 	podCopy := pod.DeepCopy()
+	m.log.Debugf("Handling webhook request for POD: %s (%s)", podCopy.Name, podCopy.Namespace)
 
 	// Patch only applications pod created by Eirini
 	if v, ok := pod.GetLabels()["source_type"]; ok && v == "APP" {
+
 		err = m.MountVcapVolumes(podCopy)
 		if err != nil {
 			return admission.ErrorResponse(http.StatusBadRequest, err)
