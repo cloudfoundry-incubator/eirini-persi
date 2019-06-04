@@ -3,22 +3,16 @@ package cmd
 import (
 	golog "log"
 	"os"
-	"time"
 
-	kubeConfig "code.cloudfoundry.org/cf-operator/pkg/kube/config"
-	"code.cloudfoundry.org/cf-operator/pkg/kube/util/config"
-	"github.com/SUSE/eirini-extensions/pkg/operator"
-	"github.com/SUSE/eirini-extensions/pkg/util/ctxlog"
 	"github.com/SUSE/eirini-extensions/version"
-
-	"github.com/spf13/afero"
+	eirinix "github.com/SUSE/eirinix"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 
+	persistence "github.com/SUSE/eirini-extensions/extensions/persistence"
+
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc" // from https://github.com/kubernetes/client-go/issues/345
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
 var (
@@ -30,14 +24,7 @@ var rootCmd = &cobra.Command{
 	Short: "eirini-ext-operator manages Eirini apps on Kubernetes",
 	Run: func(cmd *cobra.Command, args []string) {
 		defer log.Sync()
-
-		restConfig, err := kubeConfig.NewGetter(log).Get(viper.GetString("kubeconfig"))
-		if err != nil {
-			log.Fatal(err)
-		}
-		if err := kubeConfig.NewChecker(log).Check(restConfig); err != nil {
-			log.Fatal(err)
-		}
+		kubeConfig := viper.GetString("kubeconfig")
 
 		namespace := viper.GetString("namespace")
 
@@ -49,22 +36,16 @@ var rootCmd = &cobra.Command{
 		if webhookHost == "" {
 			log.Fatal("required flag 'operator-webhook-host' not set (env variable: OPERATOR_WEBHOOK_HOST)")
 		}
+		x := eirinix.NewManager(
+			eirinix.ManagerOptions{
+				Namespace:  namespace,
+				Host:       webhookHost,
+				Port:       webhookPort,
+				KubeConfig: kubeConfig,
+			})
 
-		config := &config.Config{
-			CtxTimeOut:        10 * time.Second,
-			Namespace:         namespace,
-			WebhookServerHost: webhookHost,
-			WebhookServerPort: webhookPort,
-			Fs:                afero.NewOsFs(),
-		}
-		ctx := ctxlog.NewManagerContext(log)
-
-		mgr, err := operator.NewManager(ctx, config, restConfig, manager.Options{Namespace: namespace})
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		log.Fatal(mgr.Start(signals.SetupSignalHandler()))
+		x.AddExtension(persistence.New())
+		log.Fatal(x.Start())
 	},
 }
 
