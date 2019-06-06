@@ -22,8 +22,10 @@ type VolumeMount struct {
 	Mode         string `json:"mode"`
 }
 
+// Credentials is containing the volume id assigned to the pod
 type Credentials struct {
-	VolumeID string `json:"volume_id"` // VolumeID represents a Persistent Volume Claim
+	// VolumeID represents a Persistent Volume Claim
+	VolumeID string `json:"volume_id"`
 }
 
 // VcapService contains the service configuration. We look only at volume mounts here
@@ -106,7 +108,7 @@ func (ext *Extension) MountVcapVolumes(patchedPod *corev1.Pod) error {
 	return nil
 }
 
-// New returns a new reconcile.Reconciler
+// New returns the persi extension
 func New() eirinix.Extension {
 	return &Extension{}
 }

@@ -1,2 +1,4 @@
-# eirini-extensions
-A set of extensions for the Eirini project
+# eirini-persi
+
+
+Persistence extension for Eirini
