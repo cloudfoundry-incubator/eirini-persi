@@ -1,36 +1,27 @@
-package webhooks_test
+package persistence_test
 
 import (
 	"context"
 	"fmt"
 	"net/http"
 
+	persistence "github.com/SUSE/eirini-extensions/extensions/persistence"
+	eirinix "github.com/SUSE/eirinix"
+	eirinixcatalog "github.com/SUSE/eirinix/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"go.uber.org/zap"
 
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
 
 	"code.cloudfoundry.org/cf-operator/pkg/kube/client/clientset/versioned/scheme"
 	"code.cloudfoundry.org/cf-operator/pkg/kube/controllers"
 	cfakes "code.cloudfoundry.org/cf-operator/pkg/kube/controllers/fakes"
-	"code.cloudfoundry.org/cf-operator/pkg/kube/util/config"
-	helper "code.cloudfoundry.org/cf-operator/pkg/testhelper"
-	webhooks "github.com/SUSE/eirini-extensions/pkg/kube/webhooks"
 	"github.com/SUSE/eirini-extensions/testing"
 )
-
-func generateGetPodFunc(pod *corev1.Pod, err error) webhooks.GetPodFuncType {
-	return func(_ types.Decoder, _ types.Request) (*corev1.Pod, error) {
-		return pod, err
-	}
-}
 
 func decodePatches(resp types.Response) string {
 	var r string
@@ -57,17 +48,16 @@ func ExpectInitContainer(pod *corev1.Pod, howmany int) {
 	}
 }
 
-var _ = Describe("Volume Mutator", func() {
-
+var _ = Describe("Persistence Extension", func() {
 	var (
-		manager          *cfakes.FakeManager
-		client           *cfakes.FakeClient
-		ctx              context.Context
-		config           *config.Config
-		env              testing.Catalog
-		log              *zap.SugaredLogger
-		request          types.Request
-		setReferenceFunc func(owner, object metav1.Object, scheme *runtime.Scheme) error = func(owner, object metav1.Object, scheme *runtime.Scheme) error { return nil }
+		eirinixcat    eirinixcatalog.Catalog
+		eiriniManager eirinix.Manager
+		eiriniExt     eirinix.Extension
+		manager       *cfakes.FakeManager
+		client        *cfakes.FakeClient
+		ctx           context.Context
+		env           testing.Catalog
+		request       types.Request
 	)
 
 	BeforeEach(func() {
@@ -81,57 +71,46 @@ var _ = Describe("Volume Mutator", func() {
 		manager.GetClientReturns(client)
 		manager.GetRESTMapperReturns(restMapper)
 
-		config = env.DefaultConfig()
 		ctx = testing.NewContext()
-		_, log = helper.NewTestLogger()
-
+		eirinixcat = eirinixcatalog.NewCatalog()
+		eiriniManager = eirinixcat.SimpleManager()
+		eiriniExt = persistence.New()
 		request = types.Request{AdmissionRequest: &admissionv1beta1.AdmissionRequest{}}
 	})
 
 	Describe("Handle", func() {
 		It("passes on errors from the decoding step", func() {
-			f := generateGetPodFunc(nil, fmt.Errorf("decode failed"))
-			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
+			ext := persistence.New()
 
-			res := mutator.Handle(ctx, request)
+			res := ext.Handle(ctx, eiriniManager, nil, request)
 			Expect(res.Response.Result.Code).To(Equal(int32(http.StatusBadRequest)))
 		})
 
 		It("does not act if the source_type: APP label is not set", func() {
 			pod := env.DefaultEiriniAppPod("foo", ``)
-			f := generateGetPodFunc(&pod, nil)
 
-			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
-			resp := mutator.Handle(ctx, request)
+			resp := eiriniExt.Handle(ctx, eiriniManager, &pod, request)
 			Expect(len(resp.Patches)).To(Equal(0))
 		})
 
 		It("does not with a no services app", func() {
 			pod := env.DefaultEiriniAppPod("foo", `{}`)
-			f := generateGetPodFunc(&pod, nil)
-
-			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
-
-			resp := mutator.Handle(ctx, request)
+			resp := eiriniExt.Handle(ctx, eiriniManager, &pod, request)
 			Expect(len(resp.Patches)).To(Equal(0))
 		})
 
 		It("does act if the source_type: APP label is set and one volume is supplied", func() {
 			pod := env.SimplePersiApp("foo")
-			f := generateGetPodFunc(&pod, nil)
-
-			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
-			resp := mutator.Handle(ctx, request)
-
+			resp := eiriniExt.Handle(ctx, eiriniManager, &pod, request)
 			Expect(len(resp.Patches)).To(Equal(3))
 		})
 
 		It("does act if the source_type: APP label is set and 3 volumes are supplied", func() {
 			pod := env.MultipleVolumePersiApp("foo")
-			f := generateGetPodFunc(&pod, nil)
-			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
-			resp := mutator.Handle(ctx, request)
+
+			resp := eiriniExt.Handle(ctx, eiriniManager, &pod, request)
 			Expect(len(resp.Patches)).To(Equal(3))
+
 			ops := env.MultipleVolumePersiAppOps()
 			Expect(len(resp.Patches)).To(Equal(len(ops)))
 			for _, op := range ops {
@@ -142,11 +121,11 @@ var _ = Describe("Volume Mutator", func() {
 
 	Describe("AppendMounts", func() {
 		It("append mounts if are existing", func() {
-			var services webhooks.VcapServices
+			var services persistence.VcapServices
 			pod := env.DefaultEiriniAppPod("bar", ``)
-			services.ServiceMap = append(services.ServiceMap, webhooks.VcapService{
-				Credentials:  webhooks.Credentials{VolumeID: "foo"},
-				VolumeMounts: []webhooks.VolumeMount{webhooks.VolumeMount{ContainerDir: "/foo/"}},
+			services.ServiceMap = append(services.ServiceMap, persistence.VcapService{
+				Credentials:  persistence.Credentials{VolumeID: "foo"},
+				VolumeMounts: []persistence.VolumeMount{persistence.VolumeMount{ContainerDir: "/foo/"}},
 			})
 			services.AppendMounts(&pod, &pod.Spec.Containers[0])
 
@@ -158,11 +137,11 @@ var _ = Describe("Volume Mutator", func() {
 		})
 
 		It("is idempotent and does not append already existing mounts", func() {
-			var services webhooks.VcapServices
+			var services persistence.VcapServices
 			pod := env.DefaultEiriniAppPod("bar", ``)
-			services.ServiceMap = append(services.ServiceMap, webhooks.VcapService{
-				Credentials:  webhooks.Credentials{VolumeID: "foo"},
-				VolumeMounts: []webhooks.VolumeMount{webhooks.VolumeMount{ContainerDir: "/foo/"}},
+			services.ServiceMap = append(services.ServiceMap, persistence.VcapService{
+				Credentials:  persistence.Credentials{VolumeID: "foo"},
+				VolumeMounts: []persistence.VolumeMount{persistence.VolumeMount{ContainerDir: "/foo/"}},
 			})
 
 			Expect(len(pod.Spec.Containers[0].VolumeMounts)).To(Equal(0))
@@ -179,13 +158,11 @@ var _ = Describe("Volume Mutator", func() {
 	Describe("MountVcapVolumes", func() {
 		It("append mounts if pods declare them in VCAP_SERVICES", func() {
 			pod := env.MultipleVolumePersiApp("foo")
-			f := generateGetPodFunc(&pod, nil)
-			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
-
-			volumeMutator, ok := mutator.(*webhooks.VolumeMutator)
+			ext, ok := eiriniExt.(*persistence.Extension)
 			Expect(ok).To(BeTrue())
+			ext.Logger = eiriniManager.GetLogger()
 
-			err := volumeMutator.MountVcapVolumes(&pod)
+			err := ext.MountVcapVolumes(&pod)
 
 			Expect(err).ToNot(HaveOccurred())
 			Expect(pod.Spec.Containers[0].VolumeMounts[0].Name).To(Equal("the-volume-id1"))
@@ -197,12 +174,11 @@ var _ = Describe("Volume Mutator", func() {
 
 		It("does nothing if env is empty", func() {
 			pod := env.DefaultEiriniAppPod("foo", `{}`)
-			f := generateGetPodFunc(&pod, nil)
-			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
-			volumeMutator, ok := mutator.(*webhooks.VolumeMutator)
+			ext, ok := eiriniExt.(*persistence.Extension)
 			Expect(ok).To(BeTrue())
+			ext.Logger = eiriniManager.GetLogger()
 
-			err := volumeMutator.MountVcapVolumes(&pod)
+			err := ext.MountVcapVolumes(&pod)
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(pod.Spec.Containers[0].VolumeMounts)).To(Equal(0))
 			Expect(len(pod.Spec.Volumes)).To(Equal(0))
@@ -210,12 +186,10 @@ var _ = Describe("Volume Mutator", func() {
 
 		It("returns an error if VCAP_SERVICES is not a json", func() {
 			pod := env.DefaultEiriniAppPod("foo", ``)
-			f := generateGetPodFunc(&pod, nil)
-			mutator := webhooks.NewVolumeMutator(log, config, manager, setReferenceFunc, f)
-			volumeMutator, ok := mutator.(*webhooks.VolumeMutator)
+			ext, ok := eiriniExt.(*persistence.Extension)
 			Expect(ok).To(BeTrue())
-
-			err := volumeMutator.MountVcapVolumes(&pod)
+			ext.Logger = eiriniManager.GetLogger()
+			err := ext.MountVcapVolumes(&pod)
 			Expect(err).To(HaveOccurred())
 		})
 	})

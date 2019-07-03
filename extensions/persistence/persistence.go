@@ -1,20 +1,16 @@
-package webhooks
+package persistence
 
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"runtime"
 
-	"code.cloudfoundry.org/cf-operator/pkg/kube/util/config"
+	eirinix "github.com/SUSE/eirinix"
 	"go.uber.org/zap"
-	"k8s.io/apimachinery/pkg/runtime"
-
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
 )
@@ -26,8 +22,10 @@ type VolumeMount struct {
 	Mode         string `json:"mode"`
 }
 
+// Credentials is containing the volume id assigned to the pod
 type Credentials struct {
-	VolumeID string `json:"volume_id"` // VolumeID represents a Persistent Volume Claim
+	// VolumeID represents a Persistent Volume Claim
+	VolumeID string `json:"volume_id"`
 }
 
 // VcapService contains the service configuration. We look only at volume mounts here
@@ -41,21 +39,8 @@ type VcapServices struct {
 	ServiceMap []VcapService `json:"eirini-persi"`
 }
 
-type setReferenceFunc func(owner, object metav1.Object, scheme *runtime.Scheme) error
-
-// VolumeMutator changes pod definitions
-type VolumeMutator struct {
-	client       client.Client
-	scheme       *runtime.Scheme
-	setReference setReferenceFunc
-	log          *zap.SugaredLogger
-	config       *config.Config
-	decoder      types.Decoder
-	getPodFunc   GetPodFuncType
-}
-
-// Implement admission.Handler so the controller can handle admission request.
-var _ admission.Handler = &VolumeMutator{}
+// Extension changes pod definitions
+type Extension struct{ Logger *zap.SugaredLogger }
 
 func containsContainerMount(containermounts []corev1.VolumeMount, mount string) bool {
 	for _, m := range containermounts {
@@ -102,17 +87,17 @@ func (s VcapServices) AppendMounts(patchedPod *corev1.Pod, c *corev1.Container) 
 }
 
 // MountVcapVolumes alters the pod given as argument with the required volumes mounted
-func (m *VolumeMutator) MountVcapVolumes(patchedPod *corev1.Pod) error {
+func (ext *Extension) MountVcapVolumes(patchedPod *corev1.Pod) error {
 	for i := range patchedPod.Spec.Containers {
 		c := &patchedPod.Spec.Containers[i]
-		for _, e := range c.Env {
-			if e.Name != "VCAP_SERVICES" {
+		for _, env := range c.Env {
+			if env.Name != "VCAP_SERVICES" {
 				continue
 			}
-			m.log.Debug("Appending volumes to the Eirini App")
+			ext.Logger.Debug("Appending volumes to the Eirini App")
 
 			var services VcapServices
-			err := json.Unmarshal([]byte(e.Value), &services)
+			err := json.Unmarshal([]byte(env.Value), &services)
 			if err != nil {
 				return err
 			}
@@ -123,58 +108,29 @@ func (m *VolumeMutator) MountVcapVolumes(patchedPod *corev1.Pod) error {
 	return nil
 }
 
-// NewVolumeMutator returns a new reconcile.Reconciler
-func NewVolumeMutator(log *zap.SugaredLogger, config *config.Config, mgr manager.Manager, srf setReferenceFunc, getPodFunc GetPodFuncType) admission.Handler {
-	mutatorLog := log.Named("eirini-volume-mutator")
-	mutatorLog.Info("Creating a Volume mutator")
-
-	return &VolumeMutator{
-		log:          mutatorLog,
-		config:       config,
-		client:       mgr.GetClient(),
-		scheme:       mgr.GetScheme(),
-		setReference: srf,
-		getPodFunc:   getPodFunc,
-	}
+// New returns the persi extension
+func New() eirinix.Extension {
+	return &Extension{}
 }
 
 // Handle manages volume claims for ExtendedStatefulSet pods
-func (m *VolumeMutator) Handle(ctx context.Context, req types.Request) types.Response {
-	pod, err := m.getPodFunc(m.decoder, req)
+func (ext *Extension) Handle(ctx context.Context, eiriniManager eirinix.Manager, pod *corev1.Pod, req types.Request) types.Response {
+
+	if pod == nil {
+		return admission.ErrorResponse(http.StatusBadRequest, errors.New("No pod could be decoded from the request"))
+	}
+
+	_, file, _, _ := runtime.Caller(0)
+	log := eiriniManager.GetLogger().Named(file)
+
+	ext.Logger = log
+	podCopy := pod.DeepCopy()
+	log.Debugf("Handling webhook request for POD: %s (%s)", podCopy.Name, podCopy.Namespace)
+
+	err := ext.MountVcapVolumes(podCopy)
 	if err != nil {
 		return admission.ErrorResponse(http.StatusBadRequest, err)
 	}
-	podCopy := pod.DeepCopy()
-	m.log.Debugf("Handling webhook request for POD: %s (%s)", podCopy.Name, podCopy.Namespace)
-
-	// Patch only applications pod created by Eirini
-	if v, ok := pod.GetLabels()["source_type"]; ok && v == "APP" {
-
-		err = m.MountVcapVolumes(podCopy)
-		if err != nil {
-			return admission.ErrorResponse(http.StatusBadRequest, err)
-		}
-	}
 
 	return admission.PatchResponse(pod, podCopy)
-}
-
-// VolumeMutator implements inject.Client.
-// A client will be automatically injected.
-var _ inject.Client = &VolumeMutator{}
-
-// InjectClient injects the client.
-func (m *VolumeMutator) InjectClient(c client.Client) error {
-	m.client = c
-	return nil
-}
-
-// VolumeMutator implements inject.Decoder.
-// A decoder will be automatically injected.
-var _ inject.Decoder = &VolumeMutator{}
-
-// InjectDecoder injects the decoder.
-func (m *VolumeMutator) InjectDecoder(d types.Decoder) error {
-	m.decoder = d
-	return nil
 }

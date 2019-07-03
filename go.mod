@@ -2,6 +2,7 @@ module github.com/SUSE/eirini-extensions
 
 require (
 	code.cloudfoundry.org/cf-operator v0.1.0
+	github.com/SUSE/eirinix v0.0.0-20190607094228-9d6bc2a521da
 	github.com/go-logr/zapr v0.1.1 // indirect
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/golang/protobuf v1.3.1 // indirect
@@ -10,8 +11,6 @@ require (
 	github.com/onsi/ginkgo v1.8.0
 	github.com/onsi/gomega v1.5.0
 	github.com/pelletier/go-toml v1.3.0 // indirect
-	github.com/pkg/errors v0.8.1
-	github.com/spf13/afero v1.2.2
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.3.2

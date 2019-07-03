@@ -1,4 +1,4 @@
-package webhooks_test
+package persistence_test
 
 import (
 	"testing"
@@ -9,5 +9,5 @@ import (
 
 func TestWebhooks(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, `Webhooks Suite`)
+	RunSpecs(t, `Persistence extension Suite`)
 }
