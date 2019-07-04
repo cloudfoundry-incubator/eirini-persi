@@ -1,4 +1,4 @@
-module github.com/SUSE/eirini-extensions
+module github.com/SUSE/eirini-persi
 
 require (
 	code.cloudfoundry.org/cf-operator v0.1.0

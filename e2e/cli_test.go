@@ -28,7 +28,7 @@ var _ = Describe("CLI", func() {
 			session, err := act("help")
 			Expect(err).ToNot(HaveOccurred())
 			Eventually(session.Out).Should(Say(`Flags:
-  -h, --help                             help for eirini-extensions
+  -h, --help                             help for eirini-persi
   -c, --kubeconfig string                Path to a kubeconfig, not required in-cluster
   -n, --namespace string                 Namespace to watch for Eirini apps \(default "eirini"\)
   -w, --operator-webhook-host string     Hostname/IP under which the webhook server can be reached from the cluster
@@ -50,7 +50,7 @@ var _ = Describe("CLI", func() {
 		It("should start the server", func() {
 			session, err := act()
 			Expect(err).ToNot(HaveOccurred())
-			Eventually(session.Err).Should(Say(`Starting eirini-extensions \d+\.\d+\.\d+ with namespace`))
+			Eventually(session.Err).Should(Say(`Starting eirini-persi \d+\.\d+\.\d+ with namespace`))
 		})
 
 		Context("when specifying namespace", func() {
@@ -66,7 +66,7 @@ var _ = Describe("CLI", func() {
 				It("should start for namespace", func() {
 					session, err := act()
 					Expect(err).ToNot(HaveOccurred())
-					Eventually(session.Err).Should(Say(`Starting eirini-extensions \d+\.\d+\.\d+ with namespace env-test`))
+					Eventually(session.Err).Should(Say(`Starting eirini-persi \d+\.\d+\.\d+ with namespace env-test`))
 				})
 			})
 
@@ -74,7 +74,7 @@ var _ = Describe("CLI", func() {
 				It("should start for namespace", func() {
 					session, err := act("--namespace", "switch-test")
 					Expect(err).ToNot(HaveOccurred())
-					Eventually(session.Err).Should(Say(`Starting eirini-extensions \d+\.\d+\.\d+ with namespace switch-test`))
+					Eventually(session.Err).Should(Say(`Starting eirini-persi \d+\.\d+\.\d+ with namespace switch-test`))
 				})
 			})
 		})

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	persistence "github.com/SUSE/eirini-extensions/extensions/persistence"
+	persistence "github.com/SUSE/eirini-persi/extensions/persistence"
 	eirinix "github.com/SUSE/eirinix"
 	eirinixcatalog "github.com/SUSE/eirinix/testing"
 	. "github.com/onsi/ginkgo"
@@ -20,7 +20,7 @@ import (
 	"code.cloudfoundry.org/cf-operator/pkg/kube/client/clientset/versioned/scheme"
 	"code.cloudfoundry.org/cf-operator/pkg/kube/controllers"
 	cfakes "code.cloudfoundry.org/cf-operator/pkg/kube/controllers/fakes"
-	"github.com/SUSE/eirini-extensions/testing"
+	"github.com/SUSE/eirini-persi/testing"
 )
 
 func decodePatches(resp types.Response) string {

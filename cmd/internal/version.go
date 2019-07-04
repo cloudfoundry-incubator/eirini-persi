@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/SUSE/eirini-extensions/version"
+	"github.com/SUSE/eirini-persi/version"
 	"github.com/spf13/cobra"
 )
 

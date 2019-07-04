@@ -4,13 +4,13 @@ import (
 	golog "log"
 	"os"
 
-	"github.com/SUSE/eirini-extensions/version"
+	"github.com/SUSE/eirini-persi/version"
 	eirinix "github.com/SUSE/eirinix"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.uber.org/zap"
 
-	persistence "github.com/SUSE/eirini-extensions/extensions/persistence"
+	persistence "github.com/SUSE/eirini-persi/extensions/persistence"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc" // from https://github.com/kubernetes/client-go/issues/345
 )
