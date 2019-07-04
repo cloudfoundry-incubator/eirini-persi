@@ -17,7 +17,7 @@ var cliPath string
 
 var _ = BeforeSuite(func() {
 	var err error
-	cliPath, err = gexec.Build("github.com/SUSE/eirini-extensions")
+	cliPath, err = gexec.Build("github.com/SUSE/eirini-persi")
 	Expect(err).ToNot(HaveOccurred())
 })
 

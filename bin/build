@@ -7,4 +7,4 @@ GIT_ROOT=${GIT_ROOT:-$(git rev-parse --show-toplevel)}
 
 BASEDIR="$(cd "$(dirname "$0")/.." && pwd)"
 set -v
-CGO_ENABLED=0 go build -o "${BASEDIR}/binaries/eirini-ext" -ldflags="-X github.com/SUSE/eirini-extensions/version.Version=${ARTIFACT_VERSION}" cmd/eirini-ext/main.go
+CGO_ENABLED=0 go build -o "${BASEDIR}/binaries/eirini-ext" -ldflags="-X github.com/SUSE/eirini-persi/version.Version=${ARTIFACT_VERSION}" cmd/eirini-ext/main.go
