@@ -4,6 +4,6 @@ go:
 env:
   - GO111MODULE=on
 before_install:
-  - GO111MODULE=off make tools
+  - make tools
 script:
   - make build test-unit
