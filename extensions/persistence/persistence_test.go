@@ -2,6 +2,7 @@ package persistence_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -85,26 +86,32 @@ var _ = Describe("Persistence Extension", func() {
 
 		It("does not act if the source_type: APP label is not set", func() {
 			pod := env.DefaultEiriniAppPod("foo", ``)
-
+			raw, _ := json.Marshal(&pod)
+			request.Object.Raw = raw
 			resp := eiriniExt.Handle(ctx, eiriniManager, &pod, request)
 			Expect(len(resp.Patches)).To(Equal(0))
 		})
 
 		It("does not with a no services app", func() {
 			pod := env.DefaultEiriniAppPod("foo", `{}`)
+			raw, _ := json.Marshal(&pod)
+			request.Object.Raw = raw
 			resp := eiriniExt.Handle(ctx, eiriniManager, &pod, request)
 			Expect(len(resp.Patches)).To(Equal(0))
 		})
 
 		It("does act if the source_type: APP label is set and one volume is supplied", func() {
 			pod := env.SimplePersiApp("foo")
+			raw, _ := json.Marshal(&pod)
+			request.Object.Raw = raw
 			resp := eiriniExt.Handle(ctx, eiriniManager, &pod, request)
 			Expect(len(resp.Patches)).To(Equal(3))
 		})
 
 		It("does act if the source_type: APP label is set and 3 volumes are supplied", func() {
 			pod := env.MultipleVolumePersiApp("foo")
-
+			raw, _ := json.Marshal(&pod)
+			request.Object.Raw = raw
 			resp := eiriniExt.Handle(ctx, eiriniManager, &pod, request)
 			Expect(len(resp.Patches)).To(Equal(3))
 
