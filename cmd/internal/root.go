@@ -69,8 +69,8 @@ func init() {
 	pf.StringP("namespace", "n", "eirini", "Namespace to watch for Eirini apps")
 	pf.StringP("operator-webhook-host", "w", "", "Hostname/IP under which the webhook server can be reached from the cluster")
 	pf.StringP("operator-webhook-port", "p", "2999", "Port the webhook server listens on")
-	pf.StringP("operator-service-name", "s", "eirini-persi", "Service name where the webhook runs on (Optional, only needed inside kube)")
-	pf.StringP("operator-webhook-namespace", "t", "cf", "The namespace the services lives in (Optional, only needed inside kube)")
+	pf.StringP("operator-service-name", "s", "", "Service name where the webhook runs on (Optional, only needed inside kube)")
+	pf.StringP("operator-webhook-namespace", "t", "", "The namespace the services lives in (Optional, only needed inside kube)")
 
 	viper.BindPFlag("kubeconfig", pf.Lookup("kubeconfig"))
 	viper.BindPFlag("namespace", pf.Lookup("namespace"))
