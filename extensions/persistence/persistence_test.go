@@ -17,9 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	"code.cloudfoundry.org/cf-operator/pkg/kube/client/clientset/versioned/scheme"
-	"code.cloudfoundry.org/cf-operator/pkg/kube/controllers"
-	cfakes "code.cloudfoundry.org/cf-operator/pkg/kube/controllers/fakes"
+	cfakes "github.com/SUSE/eirini-persi/pkg/controllers/fakes"
 	"github.com/SUSE/eirini-persi/testing"
 )
 
@@ -61,13 +59,12 @@ var _ = Describe("Persistence Extension", func() {
 	)
 
 	BeforeEach(func() {
-		controllers.AddToScheme(scheme.Scheme)
 		client = &cfakes.FakeClient{}
 		restMapper := meta.NewDefaultRESTMapper([]schema.GroupVersion{})
 		restMapper.Add(schema.GroupVersionKind{Group: "", Kind: "Pod", Version: "v1"}, meta.RESTScopeNamespace)
 
 		manager = &cfakes.FakeManager{}
-		manager.GetSchemeReturns(scheme.Scheme)
+		//	manager.GetSchemeReturns(scheme.Scheme)
 		manager.GetClientReturns(client)
 		manager.GetRESTMapperReturns(restMapper)
 
