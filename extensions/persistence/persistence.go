@@ -12,7 +12,6 @@ import (
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
 )
 
 // VolumeMount is a volume assigned to the app
@@ -114,10 +113,10 @@ func New() eirinix.Extension {
 }
 
 // Handle manages volume claims for ExtendedStatefulSet pods
-func (ext *Extension) Handle(ctx context.Context, eiriniManager eirinix.Manager, pod *corev1.Pod, req types.Request) types.Response {
+func (ext *Extension) Handle(ctx context.Context, eiriniManager eirinix.Manager, pod *corev1.Pod, req admission.Request) admission.Response {
 
 	if pod == nil {
-		return admission.ErrorResponse(http.StatusBadRequest, errors.New("No pod could be decoded from the request"))
+		return admission.Errored(http.StatusBadRequest, errors.New("No pod could be decoded from the request"))
 	}
 
 	_, file, _, _ := runtime.Caller(0)
@@ -129,8 +128,8 @@ func (ext *Extension) Handle(ctx context.Context, eiriniManager eirinix.Manager,
 
 	err := ext.MountVcapVolumes(podCopy)
 	if err != nil {
-		return admission.ErrorResponse(http.StatusBadRequest, err)
+		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	return admission.PatchResponse(pod, podCopy)
+	return eiriniManager.PatchFromPod(req, podCopy)
 }
