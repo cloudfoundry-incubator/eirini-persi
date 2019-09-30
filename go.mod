@@ -1,27 +1,18 @@
 module github.com/SUSE/eirini-persi
 
 require (
-	code.cloudfoundry.org/cf-operator v0.1.0
-	github.com/SUSE/eirinix v0.0.0-20190607094228-9d6bc2a521da
-	github.com/go-logr/zapr v0.1.1 // indirect
-	github.com/gogo/protobuf v1.2.1 // indirect
-	github.com/golang/protobuf v1.3.1 // indirect
-	github.com/imdario/mergo v0.3.7 // indirect
-	github.com/kr/pretty v0.1.0 // indirect
-	github.com/onsi/ginkgo v1.8.0
-	github.com/onsi/gomega v1.5.0
+	code.cloudfoundry.org/cf-operator v0.4.0
+	github.com/SUSE/eirinix v0.0.0-20190930085958-f4b5db813f71
+	github.com/onsi/ginkgo v1.10.1
+	github.com/onsi/gomega v1.6.0
 	github.com/pelletier/go-toml v1.3.0 // indirect
-	github.com/spf13/cobra v0.0.3
+	github.com/spf13/cobra v0.0.5
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.3.2
-	go.uber.org/zap v1.9.1
-	golang.org/x/crypto v0.0.0-20190403202508-8e1b8d32e692 // indirect
-	golang.org/x/net v0.0.0-20190403144856-b630fd6fe46b // indirect
-	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a // indirect
+	go.uber.org/zap v1.10.0
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
-	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
-	k8s.io/api v0.0.0-20181213150558-05914d821849
-	k8s.io/apimachinery v0.0.0-20181127025237-2b1284ed4c93
-	k8s.io/client-go v2.0.0-alpha.0.0.20181213151034-8d9ed539ba31+incompatible
-	sigs.k8s.io/controller-runtime v0.1.10
+	k8s.io/api v0.0.0-20190409021203-6e4e0e4f393b
+	k8s.io/apimachinery v0.0.0-20190404173353-6a84e37a896d
+	k8s.io/client-go v11.0.1-0.20190409021438-1a26190bd76a+incompatible
+	sigs.k8s.io/controller-runtime v0.2.0
 )

@@ -2,6 +2,7 @@
 set -e
 
 [ ! -d "vendor" ] && echo "$0 requires vendor/ folder, run 'go mod vendor'"
+go get -u github.com/maxbrunsfeld/counterfeiter
 
 counterfeiter -o pkg/controllers/fakes/manager.go vendor/sigs.k8s.io/controller-runtime/pkg/manager Manager
 counterfeiter -o pkg/controllers/fakes/client.go vendor/sigs.k8s.io/controller-runtime/pkg/client Client

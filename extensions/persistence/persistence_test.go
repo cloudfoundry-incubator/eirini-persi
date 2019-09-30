@@ -2,6 +2,7 @@ package persistence_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -10,20 +11,18 @@ import (
 	eirinixcatalog "github.com/SUSE/eirinix/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
 
-	"code.cloudfoundry.org/cf-operator/pkg/kube/client/clientset/versioned/scheme"
-	"code.cloudfoundry.org/cf-operator/pkg/kube/controllers"
-	cfakes "code.cloudfoundry.org/cf-operator/pkg/kube/controllers/fakes"
+	cfakes "github.com/SUSE/eirini-persi/pkg/controllers/fakes"
 	"github.com/SUSE/eirini-persi/testing"
 )
 
-func decodePatches(resp types.Response) string {
+func decodePatches(resp admission.Response) string {
 	var r string
 	for _, patch := range resp.Patches {
 		r += patch.Json()
@@ -57,17 +56,16 @@ var _ = Describe("Persistence Extension", func() {
 		client        *cfakes.FakeClient
 		ctx           context.Context
 		env           testing.Catalog
-		request       types.Request
+		request       admission.Request
 	)
 
 	BeforeEach(func() {
-		controllers.AddToScheme(scheme.Scheme)
 		client = &cfakes.FakeClient{}
 		restMapper := meta.NewDefaultRESTMapper([]schema.GroupVersion{})
 		restMapper.Add(schema.GroupVersionKind{Group: "", Kind: "Pod", Version: "v1"}, meta.RESTScopeNamespace)
 
 		manager = &cfakes.FakeManager{}
-		manager.GetSchemeReturns(scheme.Scheme)
+		//	manager.GetSchemeReturns(scheme.Scheme)
 		manager.GetClientReturns(client)
 		manager.GetRESTMapperReturns(restMapper)
 
@@ -75,7 +73,7 @@ var _ = Describe("Persistence Extension", func() {
 		eirinixcat = eirinixcatalog.NewCatalog()
 		eiriniManager = eirinixcat.SimpleManager()
 		eiriniExt = persistence.New()
-		request = types.Request{AdmissionRequest: &admissionv1beta1.AdmissionRequest{}}
+		request = admission.Request{AdmissionRequest: admissionv1beta1.AdmissionRequest{}}
 	})
 
 	Describe("Handle", func() {
@@ -83,31 +81,37 @@ var _ = Describe("Persistence Extension", func() {
 			ext := persistence.New()
 
 			res := ext.Handle(ctx, eiriniManager, nil, request)
-			Expect(res.Response.Result.Code).To(Equal(int32(http.StatusBadRequest)))
+			Expect(res.AdmissionResponse.Result.Code).To(Equal(int32(http.StatusBadRequest)))
 		})
 
 		It("does not act if the source_type: APP label is not set", func() {
 			pod := env.DefaultEiriniAppPod("foo", ``)
-
+			raw, _ := json.Marshal(&pod)
+			request.Object.Raw = raw
 			resp := eiriniExt.Handle(ctx, eiriniManager, &pod, request)
 			Expect(len(resp.Patches)).To(Equal(0))
 		})
 
 		It("does not with a no services app", func() {
 			pod := env.DefaultEiriniAppPod("foo", `{}`)
+			raw, _ := json.Marshal(&pod)
+			request.Object.Raw = raw
 			resp := eiriniExt.Handle(ctx, eiriniManager, &pod, request)
 			Expect(len(resp.Patches)).To(Equal(0))
 		})
 
 		It("does act if the source_type: APP label is set and one volume is supplied", func() {
 			pod := env.SimplePersiApp("foo")
+			raw, _ := json.Marshal(&pod)
+			request.Object.Raw = raw
 			resp := eiriniExt.Handle(ctx, eiriniManager, &pod, request)
 			Expect(len(resp.Patches)).To(Equal(3))
 		})
 
 		It("does act if the source_type: APP label is set and 3 volumes are supplied", func() {
 			pod := env.MultipleVolumePersiApp("foo")
-
+			raw, _ := json.Marshal(&pod)
+			request.Object.Raw = raw
 			resp := eiriniExt.Handle(ctx, eiriniManager, &pod, request)
 			Expect(len(resp.Patches)).To(Equal(3))
 
