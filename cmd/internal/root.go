@@ -34,10 +34,19 @@ var rootCmd = &cobra.Command{
 		webhookPort := viper.GetInt32("operator-webhook-port")
 		serviceName := viper.GetString("operator-service-name")
 		webhookNamespace := viper.GetString("operator-webhook-namespace")
+		register := viper.GetBool("register-only")
+		start := viper.GetBool("start-only")
 
 		if webhookHost == "" {
 			log.Fatal("required flag 'operator-webhook-host' not set (env variable: OPERATOR_WEBHOOK_HOST)")
 		}
+
+		RegisterWebhooks := true
+		if start {
+			log.Info("start-only supplied, the extension will start without registering")
+			RegisterWebhooks = false
+		}
+
 		x := eirinix.NewManager(
 			eirinix.ManagerOptions{
 				Namespace:        namespace,
@@ -46,9 +55,21 @@ var rootCmd = &cobra.Command{
 				KubeConfig:       kubeConfig,
 				ServiceName:      serviceName,
 				WebhookNamespace: webhookNamespace,
+				RegisterWebHook:  &RegisterWebhooks,
 			})
 
 		x.AddExtension(persistence.New())
+
+		if register {
+			log.Info("Registering the extension")
+			err := x.RegisterExtensions()
+			if err != nil {
+				log.Fatal(err.Error())
+			}
+			return
+		}
+		log.Info("Starting the extension")
+
 		log.Fatal(x.Start())
 	},
 }
@@ -71,6 +92,8 @@ func init() {
 	pf.StringP("operator-webhook-port", "p", "2999", "Port the webhook server listens on")
 	pf.StringP("operator-service-name", "s", "", "Service name where the webhook runs on (Optional, only needed inside kube)")
 	pf.StringP("operator-webhook-namespace", "t", "", "The namespace the services lives in (Optional, only needed inside kube)")
+	pf.BoolP("register-only", "", false, "Register the extension, do not start it (default: register and start)")
+	pf.BoolP("start-only", "", false, "Starts the extension, do not register it (default: register and start)")
 
 	viper.BindPFlag("kubeconfig", pf.Lookup("kubeconfig"))
 	viper.BindPFlag("namespace", pf.Lookup("namespace"))
@@ -78,6 +101,8 @@ func init() {
 	viper.BindPFlag("operator-webhook-port", pf.Lookup("operator-webhook-port"))
 	viper.BindPFlag("operator-service-name", pf.Lookup("operator-service-name"))
 	viper.BindPFlag("operator-webhook-namespace", pf.Lookup("operator-webhook-namespace"))
+	viper.BindPFlag("register-only", pf.Lookup("register-only"))
+	viper.BindPFlag("start-only", pf.Lookup("start-only"))
 
 	viper.BindEnv("kubeconfig")
 	viper.BindEnv("namespace", "NAMESPACE")
@@ -85,6 +110,8 @@ func init() {
 	viper.BindEnv("operator-webhook-port", "OPERATOR_WEBHOOK_PORT")
 	viper.BindEnv("operator-service-name", "OPERATOR_SERVICE_NAME")
 	viper.BindEnv("operator-webhook-namespace", "OPERATOR_WEBHOOK_NAMESPACE")
+	viper.BindEnv("register-only", "REGISTER_ONLY")
+	viper.BindEnv("start-only", "START_ONLY")
 }
 
 // initConfig is executed before running commands
