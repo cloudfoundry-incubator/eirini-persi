@@ -110,8 +110,8 @@ func init() {
 	viper.BindEnv("operator-webhook-port", "OPERATOR_WEBHOOK_PORT")
 	viper.BindEnv("operator-service-name", "OPERATOR_SERVICE_NAME")
 	viper.BindEnv("operator-webhook-namespace", "OPERATOR_WEBHOOK_NAMESPACE")
-	viper.BindEnv("register-only", "REGISTER_ONLY")
-	viper.BindEnv("start-only", "START_ONLY")
+	viper.BindEnv("register-only", "EIRINI_EXTENSION_REGISTER_ONLY")
+	viper.BindEnv("start-only", "EIRINI_EXTENSION_START_ONLY")
 }
 
 // initConfig is executed before running commands
