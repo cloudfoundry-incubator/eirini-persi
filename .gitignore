@@ -3,10 +3,6 @@ binaries
 # Temp dir for generated kube files
 /_tmp
 
-### Go ###
-# go modules support is still experimental, avoid checksum errors:
-go.sum
-
 # Test binary, build with `go test -c`
 *.test
 
