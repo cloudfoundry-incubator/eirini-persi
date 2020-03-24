@@ -2,7 +2,7 @@ module github.com/SUSE/eirini-persi
 
 require (
 	code.cloudfoundry.org/cf-operator v0.4.0
-	github.com/SUSE/eirinix v0.2.1-0.20191209074319-12b270375da8
+	github.com/SUSE/eirinix v0.2.1-0.20200131100111-fd343f4e2056
 	github.com/onsi/ginkgo v1.10.1
 	github.com/onsi/gomega v1.6.0
 	github.com/pelletier/go-toml v1.3.0 // indirect
