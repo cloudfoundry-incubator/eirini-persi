@@ -6,7 +6,7 @@ require (
 	github.com/onsi/ginkgo v1.10.1
 	github.com/onsi/gomega v1.6.0
 	github.com/pelletier/go-toml v1.3.0 // indirect
-	github.com/spf13/cobra v0.0.5
+	github.com/spf13/cobra v0.0.7
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.3.2
 	go.uber.org/zap v1.10.0
