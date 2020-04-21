@@ -4,25 +4,25 @@
 package testing
 
 import (
+	operator_catalog "code.cloudfoundry.org/cf-operator/testing"
+	testing_utils "code.cloudfoundry.org/quarks-utils/testing"
 	"context"
-
-	operator_testing "code.cloudfoundry.org/cf-operator/testing"
 	corev1 "k8s.io/api/core/v1"
 )
 
 // NewCatalog returns a Catalog, our helper for test cases
 func NewCatalog() Catalog {
-	return Catalog{Catalog: &operator_testing.Catalog{}}
+	return Catalog{Catalog: &operator_catalog.Catalog{}}
 }
 
 // NewContext returns a non-nil empty context, for usage when it is unclear
 // which context to use.  Mostly used in tests.
 func NewContext() context.Context {
-	return operator_testing.NewContext()
+	return testing_utils.NewContext()
 }
 
 // Catalog provides several instances for test, based on the cf-operator's catalog
-type Catalog struct{ *operator_testing.Catalog }
+type Catalog struct{ *operator_catalog.Catalog }
 
 // PodWithVcapServices generates a labeled pod with VCAP_SERVICES environment variable set
 func (c *Catalog) PodWithVcapServices(name string, labels map[string]string, vcapServices string) corev1.Pod {
