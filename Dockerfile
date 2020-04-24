@@ -15,7 +15,7 @@ RUN if [ "$DEBUG_TOOLS" = "true" ] ; then \
     wget -O kubectl.tar.gz https://dl.k8s.io/$KUBECTL_VERSION/kubernetes-client-$KUBECTL_ARCH.tar.gz && \
     echo "$KUBECTL_CHECKSUM kubectl.tar.gz" | sha512sum --check --status && \
     tar xvf kubectl.tar.gz -C / && \
-    cp -rf /kubernetes/client/bin/kubectl /eirini-persi/binaries/; fi
+    cp -f /kubernetes/client/bin/kubectl /eirini-persi/binaries/; fi
 RUN GO111MODULE=on go mod vendor
 RUN bin/build
 
