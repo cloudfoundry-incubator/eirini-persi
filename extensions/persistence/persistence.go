@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"runtime"
 
@@ -68,18 +67,29 @@ func (s VcapServices) AppendMounts(patchedPod *corev1.Pod, c *corev1.Container) 
 					Name:      volumeService.Credentials.VolumeID,
 					MountPath: volumeMount.ContainerDir,
 				})
-				u := int64(0)
-				patchedPod.Spec.InitContainers = append(patchedPod.Spec.InitContainers, corev1.Container{
-					SecurityContext: &corev1.SecurityContext{RunAsUser: &u},
-					Name:            fmt.Sprintf("eirini-persi-%s", volumeService.Credentials.VolumeID),
-					Image:           c.Image,
-					VolumeMounts:    c.VolumeMounts,
-					Command: []string{
-						"sh",
-						"-c",
-						fmt.Sprintf("chown -R vcap:vcap %s", volumeMount.ContainerDir),
-					},
-				})
+
+				vcap := int64(2000) // Best guess for vcap group id
+				if patchedPod.Spec.SecurityContext == nil {
+					patchedPod.Spec.SecurityContext = &corev1.PodSecurityContext{
+						RunAsUser:  &vcap,
+						RunAsGroup: &vcap,
+						FSGroup:    &vcap,
+					}
+				} else {
+					// Try to find a better guess for the group id
+					if patchedPod.Spec.SecurityContext.RunAsGroup != nil {
+						vcap = *patchedPod.Spec.SecurityContext.RunAsGroup
+					} else if patchedPod.Spec.SecurityContext.RunAsUser != nil {
+						// Normally uid == gid for vcap user
+						vcap = *patchedPod.Spec.SecurityContext.RunAsUser
+					}
+					if patchedPod.Spec.SecurityContext.FSGroup == nil {
+						patchedPod.Spec.SecurityContext.FSGroup = &vcap
+					}
+					if patchedPod.Spec.SecurityContext.RunAsGroup == nil {
+						patchedPod.Spec.SecurityContext.RunAsGroup = &vcap
+					}
+				}
 			}
 		}
 	}
