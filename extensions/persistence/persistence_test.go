@@ -3,7 +3,6 @@ package persistence_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	persistence "github.com/SUSE/eirini-persi/extensions/persistence"
@@ -14,7 +13,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
@@ -28,23 +26,6 @@ func decodePatches(resp admission.Response) string {
 		r += patch.Json()
 	}
 	return r
-}
-
-func ExpectInitContainer(pod *corev1.Pod, howmany int) {
-	Expect(len(pod.Spec.InitContainers)).To(Equal(howmany))
-	Expect(len(pod.Spec.Containers[0].VolumeMounts)).To(Equal(howmany))
-
-	for i, vm := range pod.Spec.Containers[0].VolumeMounts {
-
-		Expect(pod.Spec.InitContainers[i].Name).To(Equal(fmt.Sprintf("eirini-persi-%s", vm.Name)))
-		Expect(pod.Spec.InitContainers[i].Image).To(Equal(pod.Spec.Containers[0].Image))
-		Expect(pod.Spec.InitContainers[i].Command).To(Equal([]string{
-			"sh",
-			"-c",
-			fmt.Sprintf("chown -R vcap:vcap %s", vm.MountPath),
-		}))
-		Expect(*pod.Spec.InitContainers[i].SecurityContext.RunAsUser).To(Equal(int64(0)))
-	}
 }
 
 var _ = Describe("Persistence Extension", func() {
@@ -116,7 +97,7 @@ var _ = Describe("Persistence Extension", func() {
 			Expect(len(resp.Patches)).To(Equal(3))
 
 			ops := env.MultipleVolumePersiAppOps()
-			Expect(len(resp.Patches)).To(Equal(len(ops)))
+			Expect(len(resp.Patches)).To(Equal(len(ops) + 1))
 			for _, op := range ops {
 				Expect(decodePatches(resp)).Should(ContainSubstring(op))
 			}
@@ -137,7 +118,6 @@ var _ = Describe("Persistence Extension", func() {
 			Expect(pod.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/foo/"))
 			Expect(pod.Spec.Volumes[0].Name).To(Equal("foo"))
 			Expect(pod.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName).To(Equal("foo"))
-			ExpectInitContainer(&pod, 1)
 		})
 
 		It("is idempotent and does not append already existing mounts", func() {
@@ -173,7 +153,6 @@ var _ = Describe("Persistence Extension", func() {
 			Expect(pod.Spec.Containers[0].VolumeMounts[0].MountPath).To(Equal("/var/vcap/data/de847d34-bdcc-4c5d-92b1-cf2158a15b47"))
 			Expect(pod.Spec.Volumes[0].Name).To(Equal("the-volume-id1"))
 			Expect(pod.Spec.Volumes[0].VolumeSource.PersistentVolumeClaim.ClaimName).To(Equal("the-volume-id1"))
-			ExpectInitContainer(&pod, 3)
 		})
 
 		It("does nothing if env is empty", func() {
