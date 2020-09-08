@@ -58,13 +58,14 @@ var startCmd = &cobra.Command{
 
 		x := eirinix.NewManager(
 			eirinix.ManagerOptions{
-				Namespace:        namespace,
-				Host:             webhookHost,
-				Port:             webhookPort,
-				KubeConfig:       kubeConfig,
-				ServiceName:      serviceName,
-				WebhookNamespace: webhookNamespace,
-				RegisterWebHook:  &RegisterWebhooks,
+				Namespace:           namespace,
+				Host:                webhookHost,
+				Port:                webhookPort,
+				KubeConfig:          kubeConfig,
+				ServiceName:         serviceName,
+				OperatorFingerprint: "eirini-persi",
+				WebhookNamespace:    webhookNamespace,
+				RegisterWebHook:     &RegisterWebhooks,
 			})
 
 		x.AddExtension(persistence.New())
