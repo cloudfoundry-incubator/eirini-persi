@@ -6,14 +6,14 @@ package testing
 import (
 	"context"
 
-	operator_catalog "code.cloudfoundry.org/cf-operator/testing"
+	eirinix_catalog "code.cloudfoundry.org/eirinix/testing"
 	testing_utils "code.cloudfoundry.org/quarks-utils/testing"
 	corev1 "k8s.io/api/core/v1"
 )
 
 // NewCatalog returns a Catalog, our helper for test cases
 func NewCatalog() Catalog {
-	return Catalog{Catalog: &operator_catalog.Catalog{}}
+	return Catalog{Catalog: &eirinix_catalog.Catalog{}}
 }
 
 // NewContext returns a non-nil empty context, for usage when it is unclear
@@ -23,7 +23,7 @@ func NewContext() context.Context {
 }
 
 // Catalog provides several instances for test, based on the cf-operator's catalog
-type Catalog struct{ *operator_catalog.Catalog }
+type Catalog struct{ *eirinix_catalog.Catalog }
 
 // PodWithVcapServices generates a labeled pod with VCAP_SERVICES environment variable set
 func (c *Catalog) PodWithVcapServices(name string, labels map[string]string, vcapServices string) corev1.Pod {

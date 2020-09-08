@@ -1,12 +1,12 @@
 package cmd
 
 import (
-	"github.com/SUSE/eirini-persi/version"
-	eirinix "github.com/SUSE/eirinix"
+	"code.cloudfoundry.org/eirini-persi/version"
+	eirinix "code.cloudfoundry.org/eirinix"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 
-	persistence "github.com/SUSE/eirini-persi/extensions/persistence"
+	persistence "code.cloudfoundry.org/eirini-persi/extensions/persistence"
 
 	_ "k8s.io/client-go/plugin/pkg/client/auth/oidc" // from https://github.com/kubernetes/client-go/issues/345
 )

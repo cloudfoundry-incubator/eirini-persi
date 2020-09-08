@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	persistence "github.com/SUSE/eirini-persi/extensions/persistence"
-	eirinix "github.com/SUSE/eirinix"
-	eirinixcatalog "github.com/SUSE/eirinix/testing"
+	persistence "code.cloudfoundry.org/eirini-persi/extensions/persistence"
+	eirinix "code.cloudfoundry.org/eirinix"
+	eirinixcatalog "code.cloudfoundry.org/eirinix/testing"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -16,8 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	cfakes "github.com/SUSE/eirini-persi/pkg/controllers/fakes"
-	"github.com/SUSE/eirini-persi/testing"
+	cfakes "code.cloudfoundry.org/eirini-persi/pkg/controllers/fakes"
+	"code.cloudfoundry.org/eirini-persi/testing"
 )
 
 func decodePatches(resp admission.Response) string {
