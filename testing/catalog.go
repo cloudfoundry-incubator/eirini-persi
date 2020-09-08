@@ -9,6 +9,7 @@ import (
 	eirinix_catalog "code.cloudfoundry.org/eirinix/testing"
 	testing_utils "code.cloudfoundry.org/quarks-utils/testing"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // NewCatalog returns a Catalog, our helper for test cases
@@ -25,10 +26,33 @@ func NewContext() context.Context {
 // Catalog provides several instances for test, based on the cf-operator's catalog
 type Catalog struct{ *eirinix_catalog.Catalog }
 
+// Sleep1hPodSpec defines a simple pod that sleeps 60*60s for testing
+func (c *Catalog) Sleep1hPodSpec() corev1.PodSpec {
+	return corev1.PodSpec{
+		Containers: []corev1.Container{
+			{
+				Name:    "busybox",
+				Image:   "busybox",
+				Command: []string{"sleep", "3600"},
+			},
+		},
+	}
+}
+
+func (c *Catalog) LabeledPod(name string, labels map[string]string) corev1.Pod {
+	return corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: labels,
+		},
+		Spec: c.Sleep1hPodSpec(),
+	}
+}
+
 // PodWithVcapServices generates a labeled pod with VCAP_SERVICES environment variable set
 func (c *Catalog) PodWithVcapServices(name string, labels map[string]string, vcapServices string) corev1.Pod {
 
-	pod := c.Catalog.LabeledPod(name, labels)
+	pod := c.LabeledPod(name, labels)
 	pod.Spec.Containers[0].Env = []corev1.EnvVar{
 		corev1.EnvVar{
 			Name:  "VCAP_SERVICES",
