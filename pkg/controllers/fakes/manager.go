@@ -2,8 +2,10 @@
 package fakes
 
 import (
+	"net/http"
 	"sync"
 
+	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
@@ -39,6 +41,18 @@ type FakeManager struct {
 	addHealthzCheckReturnsOnCall map[int]struct {
 		result1 error
 	}
+	AddMetricsExtraHandlerStub        func(string, http.Handler) error
+	addMetricsExtraHandlerMutex       sync.RWMutex
+	addMetricsExtraHandlerArgsForCall []struct {
+		arg1 string
+		arg2 http.Handler
+	}
+	addMetricsExtraHandlerReturns struct {
+		result1 error
+	}
+	addMetricsExtraHandlerReturnsOnCall map[int]struct {
+		result1 error
+	}
 	AddReadyzCheckStub        func(string, healthz.Checker) error
 	addReadyzCheckMutex       sync.RWMutex
 	addReadyzCheckArgsForCall []struct {
@@ -50,6 +64,16 @@ type FakeManager struct {
 	}
 	addReadyzCheckReturnsOnCall map[int]struct {
 		result1 error
+	}
+	ElectedStub        func() <-chan struct{}
+	electedMutex       sync.RWMutex
+	electedArgsForCall []struct {
+	}
+	electedReturns struct {
+		result1 <-chan struct{}
+	}
+	electedReturnsOnCall map[int]struct {
+		result1 <-chan struct{}
 	}
 	GetAPIReaderStub        func() client.Reader
 	getAPIReaderMutex       sync.RWMutex
@@ -111,6 +135,16 @@ type FakeManager struct {
 	}
 	getFieldIndexerReturnsOnCall map[int]struct {
 		result1 client.FieldIndexer
+	}
+	GetLoggerStub        func() logr.Logger
+	getLoggerMutex       sync.RWMutex
+	getLoggerArgsForCall []struct {
+	}
+	getLoggerReturns struct {
+		result1 logr.Logger
+	}
+	getLoggerReturnsOnCall map[int]struct {
+		result1 logr.Logger
 	}
 	GetRESTMapperStub        func() meta.RESTMapper
 	getRESTMapperMutex       sync.RWMutex
@@ -289,6 +323,67 @@ func (fake *FakeManager) AddHealthzCheckReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeManager) AddMetricsExtraHandler(arg1 string, arg2 http.Handler) error {
+	fake.addMetricsExtraHandlerMutex.Lock()
+	ret, specificReturn := fake.addMetricsExtraHandlerReturnsOnCall[len(fake.addMetricsExtraHandlerArgsForCall)]
+	fake.addMetricsExtraHandlerArgsForCall = append(fake.addMetricsExtraHandlerArgsForCall, struct {
+		arg1 string
+		arg2 http.Handler
+	}{arg1, arg2})
+	fake.recordInvocation("AddMetricsExtraHandler", []interface{}{arg1, arg2})
+	fake.addMetricsExtraHandlerMutex.Unlock()
+	if fake.AddMetricsExtraHandlerStub != nil {
+		return fake.AddMetricsExtraHandlerStub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.addMetricsExtraHandlerReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakeManager) AddMetricsExtraHandlerCallCount() int {
+	fake.addMetricsExtraHandlerMutex.RLock()
+	defer fake.addMetricsExtraHandlerMutex.RUnlock()
+	return len(fake.addMetricsExtraHandlerArgsForCall)
+}
+
+func (fake *FakeManager) AddMetricsExtraHandlerCalls(stub func(string, http.Handler) error) {
+	fake.addMetricsExtraHandlerMutex.Lock()
+	defer fake.addMetricsExtraHandlerMutex.Unlock()
+	fake.AddMetricsExtraHandlerStub = stub
+}
+
+func (fake *FakeManager) AddMetricsExtraHandlerArgsForCall(i int) (string, http.Handler) {
+	fake.addMetricsExtraHandlerMutex.RLock()
+	defer fake.addMetricsExtraHandlerMutex.RUnlock()
+	argsForCall := fake.addMetricsExtraHandlerArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeManager) AddMetricsExtraHandlerReturns(result1 error) {
+	fake.addMetricsExtraHandlerMutex.Lock()
+	defer fake.addMetricsExtraHandlerMutex.Unlock()
+	fake.AddMetricsExtraHandlerStub = nil
+	fake.addMetricsExtraHandlerReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeManager) AddMetricsExtraHandlerReturnsOnCall(i int, result1 error) {
+	fake.addMetricsExtraHandlerMutex.Lock()
+	defer fake.addMetricsExtraHandlerMutex.Unlock()
+	fake.AddMetricsExtraHandlerStub = nil
+	if fake.addMetricsExtraHandlerReturnsOnCall == nil {
+		fake.addMetricsExtraHandlerReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.addMetricsExtraHandlerReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeManager) AddReadyzCheck(arg1 string, arg2 healthz.Checker) error {
 	fake.addReadyzCheckMutex.Lock()
 	ret, specificReturn := fake.addReadyzCheckReturnsOnCall[len(fake.addReadyzCheckArgsForCall)]
@@ -347,6 +442,58 @@ func (fake *FakeManager) AddReadyzCheckReturnsOnCall(i int, result1 error) {
 	}
 	fake.addReadyzCheckReturnsOnCall[i] = struct {
 		result1 error
+	}{result1}
+}
+
+func (fake *FakeManager) Elected() <-chan struct{} {
+	fake.electedMutex.Lock()
+	ret, specificReturn := fake.electedReturnsOnCall[len(fake.electedArgsForCall)]
+	fake.electedArgsForCall = append(fake.electedArgsForCall, struct {
+	}{})
+	fake.recordInvocation("Elected", []interface{}{})
+	fake.electedMutex.Unlock()
+	if fake.ElectedStub != nil {
+		return fake.ElectedStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.electedReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakeManager) ElectedCallCount() int {
+	fake.electedMutex.RLock()
+	defer fake.electedMutex.RUnlock()
+	return len(fake.electedArgsForCall)
+}
+
+func (fake *FakeManager) ElectedCalls(stub func() <-chan struct{}) {
+	fake.electedMutex.Lock()
+	defer fake.electedMutex.Unlock()
+	fake.ElectedStub = stub
+}
+
+func (fake *FakeManager) ElectedReturns(result1 <-chan struct{}) {
+	fake.electedMutex.Lock()
+	defer fake.electedMutex.Unlock()
+	fake.ElectedStub = nil
+	fake.electedReturns = struct {
+		result1 <-chan struct{}
+	}{result1}
+}
+
+func (fake *FakeManager) ElectedReturnsOnCall(i int, result1 <-chan struct{}) {
+	fake.electedMutex.Lock()
+	defer fake.electedMutex.Unlock()
+	fake.ElectedStub = nil
+	if fake.electedReturnsOnCall == nil {
+		fake.electedReturnsOnCall = make(map[int]struct {
+			result1 <-chan struct{}
+		})
+	}
+	fake.electedReturnsOnCall[i] = struct {
+		result1 <-chan struct{}
 	}{result1}
 }
 
@@ -670,6 +817,58 @@ func (fake *FakeManager) GetFieldIndexerReturnsOnCall(i int, result1 client.Fiel
 	}{result1}
 }
 
+func (fake *FakeManager) GetLogger() logr.Logger {
+	fake.getLoggerMutex.Lock()
+	ret, specificReturn := fake.getLoggerReturnsOnCall[len(fake.getLoggerArgsForCall)]
+	fake.getLoggerArgsForCall = append(fake.getLoggerArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetLogger", []interface{}{})
+	fake.getLoggerMutex.Unlock()
+	if fake.GetLoggerStub != nil {
+		return fake.GetLoggerStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.getLoggerReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakeManager) GetLoggerCallCount() int {
+	fake.getLoggerMutex.RLock()
+	defer fake.getLoggerMutex.RUnlock()
+	return len(fake.getLoggerArgsForCall)
+}
+
+func (fake *FakeManager) GetLoggerCalls(stub func() logr.Logger) {
+	fake.getLoggerMutex.Lock()
+	defer fake.getLoggerMutex.Unlock()
+	fake.GetLoggerStub = stub
+}
+
+func (fake *FakeManager) GetLoggerReturns(result1 logr.Logger) {
+	fake.getLoggerMutex.Lock()
+	defer fake.getLoggerMutex.Unlock()
+	fake.GetLoggerStub = nil
+	fake.getLoggerReturns = struct {
+		result1 logr.Logger
+	}{result1}
+}
+
+func (fake *FakeManager) GetLoggerReturnsOnCall(i int, result1 logr.Logger) {
+	fake.getLoggerMutex.Lock()
+	defer fake.getLoggerMutex.Unlock()
+	fake.GetLoggerStub = nil
+	if fake.getLoggerReturnsOnCall == nil {
+		fake.getLoggerReturnsOnCall = make(map[int]struct {
+			result1 logr.Logger
+		})
+	}
+	fake.getLoggerReturnsOnCall[i] = struct {
+		result1 logr.Logger
+	}{result1}
+}
+
 func (fake *FakeManager) GetRESTMapper() meta.RESTMapper {
 	fake.getRESTMapperMutex.Lock()
 	ret, specificReturn := fake.getRESTMapperReturnsOnCall[len(fake.getRESTMapperArgsForCall)]
@@ -953,8 +1152,12 @@ func (fake *FakeManager) Invocations() map[string][][]interface{} {
 	defer fake.addMutex.RUnlock()
 	fake.addHealthzCheckMutex.RLock()
 	defer fake.addHealthzCheckMutex.RUnlock()
+	fake.addMetricsExtraHandlerMutex.RLock()
+	defer fake.addMetricsExtraHandlerMutex.RUnlock()
 	fake.addReadyzCheckMutex.RLock()
 	defer fake.addReadyzCheckMutex.RUnlock()
+	fake.electedMutex.RLock()
+	defer fake.electedMutex.RUnlock()
 	fake.getAPIReaderMutex.RLock()
 	defer fake.getAPIReaderMutex.RUnlock()
 	fake.getCacheMutex.RLock()
@@ -967,6 +1170,8 @@ func (fake *FakeManager) Invocations() map[string][][]interface{} {
 	defer fake.getEventRecorderForMutex.RUnlock()
 	fake.getFieldIndexerMutex.RLock()
 	defer fake.getFieldIndexerMutex.RUnlock()
+	fake.getLoggerMutex.RLock()
+	defer fake.getLoggerMutex.RUnlock()
 	fake.getRESTMapperMutex.RLock()
 	defer fake.getRESTMapperMutex.RUnlock()
 	fake.getSchemeMutex.RLock()

@@ -1,6 +1,6 @@
 package main
 
-import "github.com/SUSE/eirini-persi/cmd/internal"
+import cmd "code.cloudfoundry.org/eirini-persi/cmd/internal"
 
 func main() {
 	cmd.Execute()

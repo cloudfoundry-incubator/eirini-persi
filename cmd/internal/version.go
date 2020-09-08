@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime"
 
-	"github.com/SUSE/eirini-persi/version"
+	"code.cloudfoundry.org/eirini-persi/version"
 	"github.com/spf13/cobra"
 )
 
