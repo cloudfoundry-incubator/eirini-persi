@@ -1,6 +1,6 @@
 ARG BASE_IMAGE=opensuse/leap
 
-FROM golang:1.12 as build
+FROM golang:1.14 as build
 ARG USER="SUSE CFCIBot"
 ARG EMAIL=ci-ci-bot@suse.de
 ARG DEBUG_TOOLS=false
